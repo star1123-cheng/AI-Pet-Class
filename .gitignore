@@ -1,0 +1,16 @@
+# 使用者指定
+node_modules/
+.DS_Store
+.env
+*.log
+config.local.js
+
+# 上層 CLAUDE.md 安全守則要求
+.env.*
+!.env.example
+*.pem
+*.key
+*credentials*.json
+*serviceAccountKey*.json
+.clasprc.json
+dist/
