@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>P1 塗鴉引擎原型</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --panel: #ffffff;
+    --ink: #222222;
+    --muted: #666055;
+    --line: #ddd6c8;
+    --accent: #2f6fd0;
+    --accent-ink: #ffffff;
+    --good: #2e8b57;
+    --warn: #c0392b;
+    --chosen: #ffd866;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background: var(--bg);
+    color: var(--ink);
+    font: 18px/1.5 -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation; /* 取消雙擊放大 */
+  }
+  .app {
+    height: 100dvh;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 16px;
+    padding: max(12px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
+  }
+  @media (orientation: portrait) {
+    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  }
+  .board { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  #pad {
+    display: block;
+    background: #fff;
+    border: 3px solid var(--line);
+    border-radius: 16px;
+    touch-action: none; /* 畫布上不捲動、不縮放 */
+  }
+  .side { overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  h1 { font-size: 20px; margin: 0; }
+  h2 { font-size: 18px; margin: 0 0 8px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 0 16px;
+    font: inherit;
+    border-radius: 12px;
+    border: 2px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+  }
+  button:active { transform: scale(0.97); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  button.label[aria-pressed="true"] { background: var(--chosen); border-color: #e0b400; font-weight: 700; }
+  button:disabled { opacity: 0.4; }
+  .big { font-size: 22px; font-weight: 700; }
+  .muted { color: var(--muted); font-size: 16px; }
+  .msg { min-height: 1.5em; }
+  .thumbs { display: flex; gap: 10px; flex-wrap: wrap; }
+  .thumb { text-align: center; font-size: 16px; }
+  .thumb canvas { width: 72px; height: 72px; border: 1px solid var(--line); border-radius: 8px; image-rendering: pixelated; display: block; }
+  .bar { display: grid; grid-template-columns: 3em 1fr 2.5em; gap: 8px; align-items: center; }
+  .bar i { display: block; height: 14px; background: var(--accent); border-radius: 7px; }
+  .score { font-size: 28px; font-weight: 700; }
+  .good { color: var(--good); }
+  .warn { color: var(--warn); }
+  details summary { min-height: 44px; display: flex; align-items: center; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="board">
+    <h1>畫一個圖形</h1>
+    <canvas id="pad" aria-label="畫布"></canvas>
+    <div class="row">
+      <button id="undo">復原一筆</button>
+      <button id="clear">擦掉重畫</button>
+    </div>
+    <div id="msg" class="msg muted"></div>
+  </div>
+
+  <div class="side">
+    <section>
+      <h2>1. 這是什麼？選標籤，餵給 AI</h2>
+      <div class="row" id="labels"></div>
+      <div class="row" style="margin-top:8px">
+        <button id="feed" class="primary">餵給 AI</button>
+        <span id="dataCount" class="muted"></span>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. 考考我的 AI</h2>
+      <div class="row">
+        <button id="quiz" class="primary">考考我的 AI</button>
+      </div>
+      <p id="guess" class="big" aria-live="polite"></p>
+      <div id="whyBox" hidden>
+        <p class="muted" style="margin:0 0 6px">我是因為跟這幾張最像：</p>
+        <div id="neighbors" class="thumbs"></div>
+        <div class="row" style="margin-top:10px">
+          <span>牠猜對了嗎？</span>
+          <button id="right">對</button>
+          <button id="wrong">錯</button>
+        </div>
+      </div>
+      <p id="trial" class="muted"></p>
+    </section>
+
+    <section>
+      <h2>3. 資料健檢</h2>
+      <div id="health"></div>
+    </section>
+
+    <section>
+      <details>
+        <summary>老師工具（測試用）</summary>
+        <div class="row">
+          <button id="loadMixed">載入合成資料（每類 5 張）</button>
+          <button id="loadBiased">載入偏誤資料（圓只有大圓）</button>
+          <button id="runTests">跑合成測試集</button>
+          <button id="resetTrial">歸零試玩紀錄</button>
+          <button id="wipe">清空全部資料</button>
+        </div>
+        <p id="testOut" class="muted"></p>
+      </details>
+    </section>
+  </div>
+</div>
+<script type="module" src="prototype.js"></script>
+</body>
+</html>

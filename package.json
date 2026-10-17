@@ -1,0 +1,12 @@
+{
+  "name": "ai-pet",
+  "private": true,
+  "type": "module",
+  "description": "國小高年級 AI 寵物養成課的 iPad 網頁遊戲",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
