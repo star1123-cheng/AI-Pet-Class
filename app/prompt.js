@@ -83,8 +83,8 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
       'p',
       { class: 'muted' },
       skillList.length
-        ? '會放進提示詞的技能：' + skillList.map((id) => SKILLS.find((s) => s.id === id)).map((s) => `${s.name} ${'★'.repeat(s.star)}`).join('、')
-        : '還沒有解鎖技能。解鎖後，技能會自動加進提示詞。',
+        ? '🧰 會放進提示詞的作品道具：' + skillList.map((id) => SKILLS.find((s) => s.id === id)).map((s) => `${s.name} ${'★'.repeat(s.star)}`).join('、')
+        : '🧰 還沒有作品道具。完成任務得到道具後，會自動加進提示詞。',
     );
 
     const energy = h(
@@ -168,7 +168,7 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
   function partnerBox() {
     const p = prompt.partner;
     if (!p) {
-      return h('button', { text: '🤝 合併夥伴的技能', onclick: showPartnerForm });
+      return h('button', { text: '🤝 合併夥伴的作品道具', onclick: showPartnerForm });
     }
     const face = h('div', { class: 'pet small' });
     mountPet(face, appearanceOf(p.serial), { label: '夥伴的 AI 寵物' });
@@ -181,7 +181,7 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
         'div',
         { class: 'col' },
         h('p', { text: '🤝 夥伴 ' + p.serial }),
-        h('p', { class: 'muted', text: names.length ? '夥伴的技能：' + names.join('、') : '夥伴還沒有技能' }),
+        h('p', { class: 'muted', text: names.length ? '夥伴的道具：' + names.join('、') : '夥伴還沒有作品道具' }),
         h('button', {
           class: 'small',
           text: '取消合併',
@@ -234,7 +234,7 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
 
     popup(
       h('h2', { text: '🤝 合併夥伴' }),
-      h('p', { text: '輸入夥伴序號卡上的 6 個字。合併後，夥伴的技能也會放進提示詞。' }),
+      h('p', { text: '輸入夥伴序號卡上的 6 個字。合併後，夥伴的作品道具也會放進提示詞。' }),
       input,
       error,
       h('div', { class: 'row' }, go, h('button', { class: 'small', text: '取消', onclick: () => (input.blur(), closePopup()) })),

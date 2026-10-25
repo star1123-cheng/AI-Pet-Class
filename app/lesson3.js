@@ -8,11 +8,11 @@ import { SHELVES, factsOn, factById } from '../talk/bookshelf.js';
 import { SLOTS, REASONS, phraseText, phraseCode } from '../talk/catchphrase.js';
 import { LESSON, TASKS, SHEET, METAPHOR, talkOf, passJudge, passFix, unlockSkill, sheetCorrect, choiceCode } from '../talk/lesson3.js';
 
-// 技能效果說明（docs/04 1.）
+// 作品道具（程式裡叫 skill）的效果說明（docs/04 1.）。道具是做作品時用的功能，不是寵物的 AI 能力
 const SKILL_INFO = {
-  feedback: '你的寵物學會說鼓勵或提示的話了',
-  sound: '你的作品可以加上猜對、猜錯的音效了',
-  anim: '你的寵物會跳一跳，還會說出你的口頭禪',
+  feedback: '做作品時，寵物可以說鼓勵或提示的話',
+  sound: '做作品時，可以加上猜對、猜錯的音效',
+  anim: '做作品時，寵物會跳一跳，還會說出你的口頭禪',
 };
 
 const pct = (x) => Math.round(x * 100) + '%';
@@ -56,6 +56,17 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
     overlay.replaceChildren();
   };
 
+  // 第 3 堂開場：寵物裝上「說話腦」（和第 1～2 堂學圖形的腦不一樣）
+  function showIntro(then) {
+    popup(
+      h('p', { class: 'big-emoji pop-in', text: '🧠' }),
+      h('h2', { text: '你的寵物裝上了新的「說話腦」！' }),
+      h('p', { text: '說話腦讀過很多很多句子，學會猜「下一個字最可能是什麼」。' }),
+      h('p', { text: '牠不會去查資料，所以有時候會說得很有自信，卻是錯的。' }),
+      h('button', { class: 'primary', text: '來聽牠說話', onclick: () => (closePopup(), showRule(then)) }),
+    );
+  }
+
   function showRule(then) {
     popup(
       h('p', { class: 'big-emoji', text: '🔍' }),
@@ -78,7 +89,7 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
     const t = TASKS.find((x) => x.skill === skill);
     popup(
       h('p', { class: 'big-emoji pop-in', text: '🎉' }),
-      h('h2', { text: `解鎖技能：${t.name} ${'★'.repeat(t.star)}` }),
+      h('h2', { text: `得到作品道具：${t.name} ${'★'.repeat(t.star)}` }),
       h('p', { text: SKILL_INFO[skill] }),
       h('button', { class: 'primary', text: '太好了', onclick: () => (closePopup(), then()) }),
     );
@@ -355,7 +366,7 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
       save();
     }
     let msg;
-    if (pass) msg = '溫度低，牠就選最可能的話說，比較不會亂說了！';
+    if (pass) msg = '溫度低，牠就挑最常見的說法，比較不會亂說了！不過最常見不等於一定對，重要的事還是要查證。';
     else if (r.level > 2) msg = '溫度還太高，牠還是很愛亂猜。把溫度調低再試試。';
     else msg = '還是說錯好幾句。溫度再調低一點試試看。';
     screen(
@@ -567,7 +578,7 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
       talk = talkOf(pet);
       closePopup();
       showHub();
-      if (!talk.ruleSeen) showRule(() => {});
+      if (!talk.ruleSeen) showIntro(() => {});
     },
   };
 }

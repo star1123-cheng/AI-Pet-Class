@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createStore, safeStorage, newPet, newEid, QUEUE_LIMIT, KEYS } from '../app/store.js';
+import { createStore, safeStorage, newPet, newEid, mergePet, QUEUE_LIMIT, KEYS } from '../app/store.js';
 
 function memoryStorage() {
   const m = new Map();
@@ -61,4 +61,23 @@ test('壞掉的 JSON 不會讓遊戲當掉', () => {
   const mem = memoryStorage();
   mem.setItem(KEYS.queue, '{壞掉');
   assert.deepEqual(createStore(safeStorage(mem)).queue(), []);
+});
+
+test('合併：堂次跟老師的 currentLesson 走，本機較新的進度不被舊雲端蓋掉', () => {
+  const local = { ...newPet('ABCDEF', { body: 0 }, 2), skills: ['score'], talk: { chain: 3 }, updated: 50 };
+  const p = mergePet(local, 'ABCDEF', { ok: true, currentLesson: 3, pet: { lesson: 2, state: {}, skills: [], badges: [], updated: 10 } }, { body: 1 });
+  assert.equal(p.lesson, 3);
+  assert.deepEqual(p.skills, ['score']);
+  assert.deepEqual(p.talk, { chain: 3 });
+  assert.deepEqual(p.appearance, { body: 1 });
+});
+
+test('合併：雲端較新時採用雲端技能；沒網路時保留本機堂次', () => {
+  const local = { ...newPet('ABCDEF', {}, 3), updated: 5 };
+  const p = mergePet(local, 'ABCDEF', { ok: true, currentLesson: 4, pet: { state: { dataCount: 9 }, skills: ['sound'], badges: [], updated: 99 } }, {});
+  assert.equal(p.lesson, 4);
+  assert.deepEqual(p.skills, ['sound']);
+  assert.equal(p.state.dataCount, 9);
+  assert.equal(mergePet(local, 'ABCDEF', null, {}).lesson, 3);
+  assert.equal(mergePet(null, 'ABCDEF', { ok: true, currentLesson: 2, pet: null }, {}).lesson, 2);
 });

@@ -34,6 +34,23 @@ export function newPet(serial, appearance, lesson = 1) {
   };
 }
 
+// 本機寵物＋GAS 回應（claimPet／getPet）合併成一份：
+// - 堂次一律跟老師在試算表設定的 currentLesson 走（老師切換堂次，iPad 下次連線就跟上）
+// - 狀態、技能留比較新的那份
+// - 外型一律由序號算（appearance 由呼叫端傳入）
+export function mergePet(local, serial, res, appearance) {
+  let p = local || newPet(serial, appearance, res?.currentLesson || 1);
+  const remote = res?.pet;
+  if (remote && remote.updated > (p.updated || 0)) {
+    p = { ...p, state: { ...p.state, ...remote.state }, skills: remote.skills, badges: remote.badges, updated: remote.updated };
+  }
+  if (res?.currentLesson) p = { ...p, lesson: res.currentLesson };
+  if (res) p.rejected = false;
+  p.appearance = appearance;
+  if (!p.state.classes?.length) p.state.classes = classesFor(p.lesson);
+  return p;
+}
+
 export function newEid(now = Date.now(), random = Math.random) {
   return now.toString(36) + '-' + Math.floor(random() * 36 ** 6).toString(36).padStart(6, '0');
 }

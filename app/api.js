@@ -87,6 +87,14 @@ export function createApi({ url, store, fetchFn = globalThis.fetch, timeoutMs = 
       store.enqueue('logEvent', { serial, lesson, type, code, value });
       return flush();
     },
+    // 回到寵物畫面時問一下目前堂次與雲端存檔；沒網路回傳 null
+    async getPet(serial) {
+      try {
+        return await call('getPet', { serial });
+      } catch {
+        return null;
+      }
+    },
     // 複製提示詞的紀錄（只有積木代碼與次數）
     logPrompt({ serial, lesson, blocks, copyCount }) {
       store.enqueue('logPrompt', { serial, lesson, blocks, copyCount });

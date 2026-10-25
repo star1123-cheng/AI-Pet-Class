@@ -3,7 +3,7 @@ import { GAS_URL } from '../config.js';
 import { validateSerial } from '../pet/serial.js';
 import { appearanceOf } from '../pet/appearance.js';
 import { mountPet } from '../pet/render.js';
-import { createStore, newPet, classesFor } from './store.js';
+import { createStore, mergePet } from './store.js';
 import { createApi } from './api.js';
 import { createLesson3 } from './lesson3.js';
 import { createPromptPage } from './prompt.js';
@@ -52,9 +52,10 @@ async function adopt() {
       return;
     }
     if (res && !res.ok) store.enqueue('claimPet', { serial: v.serial }); // 例如 busy：之後再補
-    pet = mergePet(v.serial, res && res.ok ? res : null);
+    pet = mergePet(store.loadPet(v.serial), v.serial, res && res.ok ? res : null, appearanceOf(v.serial));
     store.setSerial(pet.serial);
     store.savePet(pet);
+    if (res?.ok) lastRefresh = Date.now(); // 剛問過 GAS，不用馬上再問
     api.logEvent(pet.serial, pet.lesson, 'adopt', res && res.ok ? 'online' : 'offline').then(showSync);
     $('serial').blur();
     showHome();
@@ -64,19 +65,23 @@ async function adopt() {
   }
 }
 
-// 本機與試算表都有資料時，留比較新的那份；外型一律由序號算
-function mergePet(serial, res) {
-  const local = store.loadPet(serial);
-  const lesson = res?.currentLesson || local?.lesson || 1;
-  let p = local || newPet(serial, appearanceOf(serial), lesson);
-  const remote = res?.pet;
-  if (remote && remote.updated > (p.updated || 0)) {
-    p = { ...p, lesson: remote.lesson, state: { ...p.state, ...remote.state }, skills: remote.skills, badges: remote.badges, updated: remote.updated };
+// 這台 iPad 記得序號時，不會再經過領養，所以回到寵物畫面時另外問 GAS 目前堂次（最多每 30 秒一次）
+const REFRESH_EVERY_MS = 30000;
+let lastRefresh = 0;
+
+async function refreshPet() {
+  if (!pet || !GAS_URL || Date.now() - lastRefresh < REFRESH_EVERY_MS) return;
+  lastRefresh = Date.now();
+  const serial = pet.serial;
+  const res = await api.getPet(serial);
+  if (!res || pet?.serial !== serial || $('home').hidden) return; // 沒網路、換人了、或已經進到別的畫面
+  if (!res.ok) {
+    if (res.error === 'unknown_serial') onRejected({ action: 'claimPet', payload: { serial } }, res.error);
+    return;
   }
-  if (res) p.rejected = false;
-  p.appearance = appearanceOf(serial);
-  if (!p.state.classes?.length) p.state.classes = classesFor(p.lesson);
-  return p;
+  const before = pet.lesson;
+  pet = store.savePet(mergePet(store.loadPet(serial) || pet, serial, res, appearanceOf(serial)));
+  if (pet.lesson !== before || res.pet) renderHome();
 }
 
 // 補送時 GAS 說序號不存在
@@ -99,6 +104,7 @@ function showHome() {
   $('prompt').hidden = true;
   $('home').hidden = false;
   renderHome();
+  refreshPet();
 }
 
 function renderHome() {
@@ -157,6 +163,10 @@ async function sync() {
 }
 
 window.addEventListener('online', sync);
+// 從別的 App 切回來（例如下課後隔天打開）時也檢查一次
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && pet && !$('home').hidden) refreshPet();
+});
 setInterval(sync, FLUSH_EVERY_MS);
 
 // iOS Safari 不理 user-scalable=no，要另外擋雙指縮放
