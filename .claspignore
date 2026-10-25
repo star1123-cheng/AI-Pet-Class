@@ -1,0 +1,4 @@
+# clasp push 只上傳 gas/ 裡的程式與資訊清單（路徑相對於 .clasp.json 的 rootDir）
+**/**
+!appsscript.json
+!*.gs

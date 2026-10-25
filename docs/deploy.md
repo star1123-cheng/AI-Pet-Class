@@ -9,6 +9,27 @@
 
 ## 1. 建立試算表與程式
 
+### 用 clasp（目前的做法）
+
+2026-10-25 已用 clasp 建立試算表「AI 寵物 班級資料」並推送程式（帳號：你目前 clasp 登入的個人帳號）。
+- 本機 `.clasp.json` 記錄專案編號，`rootDir` 是 `gas/`；它在 `.gitignore` 裡，不會進 repo
+- `.claspignore` 限制只上傳 `gas/` 的 `.gs` 與 `appsscript.json`
+- 改了 `gas/` 之後在專案資料夾執行下面指令上傳（`--force` 是因為 `appsscript.json` 有改時 clasp 會要求確認）：
+
+```bash
+clasp push --force
+```
+
+- 開啟試算表：
+
+```bash
+clasp open-container
+```
+
+- `.clasprc.json`（clasp 的登入憑證，在你的使用者資料夾）絕對不可放進專案或 Git。
+
+### 手動貼上（沒有 clasp 時）
+
 1. 用**你的帳號**建立一份新的 Google 試算表，命名例如「AI 寵物 班級資料」。
 2. 試算表選單「擴充功能」→「Apps Script」。
 3. 左邊「專案設定」（齒輪）→ 勾選「在編輯器中顯示『appsscript.json』資訊清單檔案」。

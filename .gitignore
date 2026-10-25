@@ -15,4 +15,6 @@ serials*.csv
 *credentials*.json
 *serviceAccountKey*.json
 .clasprc.json
+# clasp 專案設定（含 scriptId，只留在本機）
+.clasp.json
 dist/
