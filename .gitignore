@@ -4,6 +4,8 @@ node_modules/
 .env
 *.log
 config.local.js
+# 正式序號清單（從試算表匯出），不進 repo
+serials*.csv
 
 # 上層 CLAUDE.md 安全守則要求
 .env.*
