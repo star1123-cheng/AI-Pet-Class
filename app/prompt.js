@@ -1,6 +1,7 @@
 // 提示詞積木頁（第 4、5 堂）：點選積木 → 預覽 → 複製到 Gemini Canvas；第 5 堂可以合併夥伴的技能。
 // 規則與資料都在 blocks/（純函式）；這裡只管畫面。所有文字都用 textContent。
 import { h } from './dom.js';
+import { icon, stars } from './icons.js';
 import { mountPet } from '../pet/render.js';
 import { appearanceOf } from '../pet/appearance.js';
 import { validateSerial } from '../pet/serial.js';
@@ -82,22 +83,24 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
     const skillLine = h(
       'p',
       { class: 'muted' },
-      skillList.length
-        ? '🧰 會放進提示詞的作品道具：' + skillList.map((id) => SKILLS.find((s) => s.id === id)).map((s) => `${s.name} ${'★'.repeat(s.star)}`).join('、')
-        : '🧰 還沒有作品道具。完成任務得到道具後，會自動加進提示詞。',
+      icon('cards'),
+      ' ',
+      ...(skillList.length
+        ? ['會放進提示詞的作品道具：', ...skillList.map((id) => SKILLS.find((s) => s.id === id)).flatMap((s, i) => [i ? '、' : '', h('span', { class: 'nowrap' }, s.name, stars(s.star, '16px'))])]
+        : ['還沒有作品道具。完成任務得到道具後，會自動加進提示詞。']),
     );
 
     const energy = h(
       'div',
       { class: 'energy', 'aria-label': `能量 ${left}／${total}` },
-      h('span', { text: `⚡ 能量 ${left}／${total}` }),
+      h('span', {}, icon('bolt'), ` 能量 ${left}／${total}`),
       h('span', { class: 'cells' }, Array.from({ length: total }, (_, i) => h('span', { class: i < left ? 'cell full' : 'cell' }))),
     );
 
     let action;
     if (!text) action = h('p', { class: 'ask', text: '先選「做什麼」，才能複製' });
     else if (left === 0) action = h('p', { class: 'ask', text: '這堂的能量用完了。想一想要怎麼改提示詞，再請老師幫忙。' });
-    else action = h('button', { class: 'primary', text: '📋 複製提示詞（用 1 點能量）', onclick: () => copy(text) });
+    else action = h('button', { class: 'primary', onclick: () => copy(text) }, icon('copy'), '複製提示詞（用 1 點能量）');
 
     body.replaceChildren(
       h('h2', { class: 'talk-title', text: `提示詞積木（第 ${lesson()} 堂）` }),
@@ -112,11 +115,11 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
           skillLine,
           lesson() >= PARTNER_LESSON ? partnerBox() : null,
           energy,
-          h('p', { class: 'rule', text: COPY_REMINDER }),
+          h('p', { class: 'rule' }, icon('shield', { size: '26px' }), COPY_REMINDER),
           action,
         ),
       ),
-      h('button', { class: 'small', text: '← 回到我的寵物', onclick: onExit }),
+      h('button', { class: 'small', onclick: onExit }, icon('back'), '回到我的寵物'),
     );
   }
 
@@ -134,10 +137,10 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
       () => {
         api.logEvent(pet.serial, lesson(), 'copy', 'ok', count);
         popup(
-          h('p', { class: 'big-emoji', text: '📋' }),
+          h('div', { class: 'sheet-icon' }, icon('copy')),
           h('h2', { text: '已經複製好了！' }),
           h('p', { text: '到 Gemini Canvas，長按輸入框，選「貼上」。' }),
-          h('p', { class: 'rule', text: COPY_REMINDER }),
+          h('p', { class: 'rule' }, icon('shield', { size: '26px' }), COPY_REMINDER),
           h('button', { class: 'primary', text: '好', onclick: closePopup }),
         );
       },
@@ -168,7 +171,7 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
   function partnerBox() {
     const p = prompt.partner;
     if (!p) {
-      return h('button', { text: '🤝 合併夥伴的作品道具', onclick: showPartnerForm });
+      return h('button', { onclick: showPartnerForm }, icon('link'), '合併夥伴的作品道具');
     }
     const face = h('div', { class: 'pet small' });
     mountPet(face, appearanceOf(p.serial), { label: '夥伴的 AI 寵物' });
@@ -180,7 +183,7 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
       h(
         'div',
         { class: 'col' },
-        h('p', { text: '🤝 夥伴 ' + p.serial }),
+        h('p', {}, icon('link'), ' 夥伴 ' + p.serial),
         h('p', { class: 'muted', text: names.length ? '夥伴的道具：' + names.join('、') : '夥伴還沒有作品道具' }),
         h('button', {
           class: 'small',
@@ -233,7 +236,8 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
     }
 
     popup(
-      h('h2', { text: '🤝 合併夥伴' }),
+      h('div', { class: 'sheet-icon' }, icon('link')),
+      h('h2', { text: '合併夥伴' }),
       h('p', { text: '輸入夥伴序號卡上的 6 個字。合併後，夥伴的作品道具也會放進提示詞。' }),
       input,
       error,

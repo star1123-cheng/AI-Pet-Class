@@ -2,6 +2,7 @@
 // 規則與資料都在 talk/（純函式）；這裡只管畫面。所有文字都用 textContent。
 import { mountPet } from '../pet/render.js';
 import { h } from './dom.js';
+import { icon, stars as starRow } from './icons.js';
 import { CHAINS, TEMPS, tempOf, applyTemperature, drawWord, DEFAULT_LEVEL } from '../talk/chain.js';
 import { TOPICS, firstRound, talkRound, wrongCount, judgeScore, shuffle } from '../talk/hallucination.js';
 import { SHELVES, factsOn, factById } from '../talk/bookshelf.js';
@@ -16,6 +17,9 @@ const SKILL_INFO = {
 };
 
 const pct = (x) => Math.round(x * 100) + '%';
+
+// 彈窗頂端的圖示方塊
+const sheetIcon = (name, tone = '') => h('div', { class: 'sheet-icon ' + tone }, icon(name));
 
 export function createLesson3({ root, store, api, getPet, onExit }) {
   const body = root.querySelector('.talk-body');
@@ -44,7 +48,7 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
     body.scrollTop = 0;
   }
 
-  const backBtn = () => h('button', { class: 'small', text: '← 回到第 3 堂', onclick: showHub });
+  const backBtn = () => h('button', { class: 'small', onclick: showHub }, icon('back'), '回到第 3 堂');
 
   // ── 彈窗 ──
   function popup(...kids) {
@@ -59,7 +63,7 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
   // 第 3 堂開場：寵物裝上「說話腦」（和第 1～2 堂學圖形的腦不一樣）
   function showIntro(then) {
     popup(
-      h('p', { class: 'big-emoji pop-in', text: '🧠' }),
+      sheetIcon('brain'),
       h('h2', { text: '你的寵物裝上了新的「說話腦」！' }),
       h('p', { text: '說話腦讀過很多很多句子，學會猜「下一個字最可能是什麼」。' }),
       h('p', { text: '牠不會去查資料，所以有時候會說得很有自信，卻是錯的。' }),
@@ -69,7 +73,7 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
 
   function showRule(then) {
     popup(
-      h('p', { class: 'big-emoji', text: '🔍' }),
+      sheetIcon('search', 'gold'),
       h('h2', { text: '守則 3：AI 說的要查證' }),
       h('p', { text: 'AI 說得很有自信，也可能是錯的。重要的事，要用可靠的來源再查一次。' }),
       h('button', {
@@ -87,9 +91,11 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
 
   function showUnlock(skill, then) {
     const t = TASKS.find((x) => x.skill === skill);
+    // 簽名動作：道具卡翻到正面，閃卡反光掃過一次
+    const stars = starRow(t.star, '22px');
     popup(
-      h('p', { class: 'big-emoji pop-in', text: '🎉' }),
-      h('h2', { text: `得到作品道具：${t.name} ${'★'.repeat(t.star)}` }),
+      h('div', { class: 'reveal' }, h('div', { class: `item t${t.star}` }, h('div', { class: 'in' }, icon('sparkle', { size: '64px' }), h('span', { text: t.name }), stars))),
+      h('h2', { class: 'with-stars' }, `得到作品道具：${t.name}`, starRow(t.star, '24px')),
       h('p', { text: SKILL_INFO[skill] }),
       h('button', { class: 'primary', text: '太好了', onclick: () => (closePopup(), then()) }),
     );
@@ -124,7 +130,7 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
     }
     draw();
     popup(
-      h('h2', { text: '📚 查證小書櫃' }),
+      h('h2', {}, icon('book'), ' 查證小書櫃'),
       h('p', { class: 'muted', text: '這些是從課本與可靠網站整理的事實。找找看，跟寵物說的一樣嗎？' }),
       tabs,
       list,
@@ -136,31 +142,43 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
   function showHub() {
     const has = (s) => pet.skills.includes(s);
     const cards = [
-      { icon: '🎲', name: '機率接龍', note: 'AI 怎麼猜下一個字', done: talk.chain >= CHAINS.length, go: () => showChain(0) },
-      { icon: '🗣️', name: '寵物亂說話', note: '★ 判斷對 5 句 → 回饋話語', done: has('feedback'), go: () => startJudge('first') },
-      { icon: '🔧', name: '修好牠的嘴巴', note: '★★ 調低溫度 → 音效', done: has('sound'), go: showFix, locked: talk.judge === null },
-      { icon: '💬', name: '口頭禪積木', note: '★★★ 造一句口頭禪 → 角色動畫', done: has('anim'), go: showPhrase },
-      { icon: '📝', name: '迷你任務單', note: '3 題', done: talk.sheet, go: () => showSheet(shuffle(SHEET), 0) },
-      { icon: '🤔', name: '這個比喻哪裡不準？', note: '下課前想一想', done: talk.metaphor, go: showMetaphor },
+      { icon: 'dice', name: '機率接龍', note: 'AI 怎麼猜下一個字', done: talk.chain >= CHAINS.length, go: () => showChain(0) },
+      { icon: 'speech', name: '寵物亂說話', star: 1, note: ['判斷對 5 句', '回饋話語'], done: has('feedback'), go: () => startJudge('first') },
+      { icon: 'wrench', name: '修好牠的嘴巴', star: 2, note: ['調低溫度', '音效'], done: has('sound'), go: showFix, locked: talk.judge === null },
+      { icon: 'chat', name: '口頭禪積木', star: 3, note: ['造一句口頭禪', '角色動畫'], done: has('anim'), go: showPhrase },
+      { icon: 'sheet', name: '迷你任務單', note: '3 題', done: talk.sheet, go: () => showSheet(shuffle(SHEET), 0) },
+      { icon: 'bulb', name: '這個比喻哪裡不準？', note: '下課前想一想', done: talk.metaphor, go: showMetaphor },
     ];
     screen(
       '第 3 堂：AI 怎麼說話',
-      h('p', { class: 'rule', text: '守則 3：🔍 AI 說的要查證' }),
+      h('p', { class: 'rule' }, icon('search', { size: '26px' }), '守則 3：AI 說的要查證'),
       h(
         'div',
         { class: 'cards' },
-        cards.map((c) =>
+        cards.map((c, n) =>
           h(
             'button',
-            { class: 'card' + (c.done ? ' done' : ''), disabled: c.locked, onclick: c.go },
-            h('span', { class: 'card-icon', text: c.icon }),
+            // 任務卡：有獎勵的依星數換框（天藍／金／閃卡），其他是深靛框
+            { class: 'card' + (c.star ? ' t' + c.star : '') + (c.done ? ' done' : ''), disabled: c.locked, onclick: c.go },
+            // 卡面：插圖窗（圖示、左上稀有度、右上建議順序），下面是名稱與說明
+            h(
+              'span',
+              { class: 'card-art' },
+              icon(c.locked ? 'question' : c.icon),
+              c.star ? starRow(c.star, '18px') : null,
+              h('span', { class: 'card-step', text: String(n + 1), 'aria-hidden': 'true' }),
+            ),
             h('span', { class: 'card-name', text: c.name }),
-            h('span', { class: 'card-note', text: c.locked ? '先玩「寵物亂說話」' : c.note }),
-            c.done ? h('span', { class: 'card-done', text: '✓ 完成' }) : null,
+            c.locked
+              ? h('span', { class: 'card-note', text: '先玩「寵物亂說話」' })
+              : Array.isArray(c.note)
+                ? h('span', { class: 'card-note' }, c.note[0], icon('next'), c.note[1])
+                : h('span', { class: 'card-note', text: c.note }),
+            c.done ? h('span', { class: 'card-done' }, icon('check'), '已完成') : null,
           ),
         ),
       ),
-      h('button', { class: 'small', text: '← 回到我的寵物', onclick: onExit }),
+      h('button', { class: 'small', onclick: onExit }, icon('back'), '回到我的寵物'),
     );
   }
 
@@ -176,7 +194,7 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
     return h(
       'div',
       { class: 'temp' },
-      h('p', {}, '🌡️ 溫度：', name),
+      h('p', {}, icon('thermo'), '溫度：', name),
       input,
       h('div', { class: 'temp-ends' }, h('span', { text: '低＝保守' }), h('span', { text: '高＝愛亂猜' })),
     );
@@ -233,11 +251,7 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
     function showNext() {
       const last = i === CHAINS.length - 1;
       after.replaceChildren(
-        h('button', {
-          class: 'primary',
-          text: last ? '完成接龍 ✓' : '下一條 →',
-          onclick: () => (last ? showHub() : showChain(i + 1)),
-        }),
+        h('button', { class: 'primary', onclick: () => (last ? showHub() : showChain(i + 1)) }, last ? '完成接龍' : '下一條', icon(last ? 'check' : 'next')),
       );
     }
 
@@ -269,8 +283,8 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
           h(
             'div',
             { class: 'row' },
-            h('button', { text: '🎲 電腦抽 1 次', onclick: () => drawMany(1) }),
-            h('button', { text: '🎲 抽 10 次', onclick: () => drawMany(10) }),
+            h('button', { onclick: () => drawMany(1) }, icon('dice'), '電腦抽 1 次'),
+            h('button', { onclick: () => drawMany(10) }, icon('dice'), '抽 10 次'),
           ),
           after,
         ),
@@ -308,10 +322,10 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
           h(
             'div',
             { class: 'row' },
-            h('button', { class: 'yes', text: '⭕ 對', onclick: () => answer(true) }),
-            h('button', { class: 'no', text: '❌ 錯', onclick: () => answer(false) }),
+            h('button', { class: 'yes', onclick: () => answer(true) }, icon('ring'), '對'),
+            h('button', { class: 'no', onclick: () => answer(false) }, icon('cross'), '錯'),
           ),
-          h('button', { class: 'shelf-btn', text: '📚 用小書櫃查證', onclick: () => showShelf(s.code) }),
+          h('button', { class: 'shelf-btn', onclick: () => showShelf(s.code) }, icon('book'), '用小書櫃查證'),
         ),
       ),
       backBtn(),
@@ -329,8 +343,9 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
         return h(
           'li',
           { class: ok ? 'ok' : 'bad' },
-          h('p', { text: `${ok ? '✓' : '✗'} 「${s.text}」 ${s.truth ? '這句是對的' : '這句是錯的'}` }),
-          s.truth ? null : h('p', { class: 'muted', text: '📚 ' + factById(s.fact).text }),
+          icon(ok ? 'check' : 'cross', { label: ok ? '你判斷對了' : '你判斷錯了' }),
+          h('p', { text: `「${s.text}」 ${s.truth ? '這句是對的' : '這句是錯的'}` }),
+          s.truth ? null : h('p', { class: 'muted' }, icon('book'), factById(s.fact).text),
         );
       }),
     );
@@ -342,14 +357,14 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
       const pass = passJudge(score);
       screen(
         `你判斷對了 ${score}／6 句`,
-        h('p', { class: 'ask', text: '🤔 為什麼牠說得這麼有自信，卻說錯了？' }),
+        h('p', { class: 'ask' }, icon('bulb'), '為什麼牠說得這麼有自信，卻說錯了？'),
         h('p', { text: '牠是從學過的文字裡，猜「最可能接的字」。牠不會自己去查，所以錯了也不知道。' }),
         list,
         h(
           'div',
           { class: 'row' },
           pass
-            ? h('button', { class: 'primary', text: '去修好牠的嘴巴 →', onclick: showFix })
+            ? h('button', { class: 'primary', onclick: showFix }, '去修好牠的嘴巴', icon('next'))
             : h('button', { class: 'primary', text: '再試一次', onclick: () => startJudge('first') }),
           h('button', { class: 'small', text: '回到第 3 堂', onclick: showHub }),
         ),
@@ -479,7 +494,7 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
     }
     draw();
     screen(
-      '口頭禪積木 ★★★',
+      '口頭禪積木',
       h(
         'div',
         { class: 'split' },
@@ -511,7 +526,7 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
           return h('button', {
             class: cls,
             disabled: answered,
-            text: (q.multi ? (chosen.has(o.id) ? '☑ ' : '☐ ') : '') + o.text,
+            'aria-pressed': q.multi ? String(chosen.has(o.id)) : null,
             onclick: () => {
               if (q.multi) {
                 chosen.has(o.id) ? chosen.delete(o.id) : chosen.add(o.id);
@@ -521,14 +536,14 @@ export function createLesson3({ root, store, api, getPet, onExit }) {
                 submit();
               }
             },
-          });
+          }, q.multi ? h('span', { class: 'box' }, chosen.has(o.id) ? icon('check') : null) : null, o.text);
         }),
       );
       if (answered) {
         const ok = sheetCorrect(q, chosen);
         foot.replaceChildren(
-          h('p', { class: ok ? 'good' : 'ask', text: ok ? '✓ 答對了！' : '再看看綠色的答案' }),
-          h('button', { class: 'primary', text: i === questions.length - 1 ? '完成任務單 ✓' : '下一題 →', onclick: () => showSheet(questions, i + 1) }),
+          h('p', { class: ok ? 'good' : 'ask' }, icon(ok ? 'check' : 'bulb'), ok ? '答對了！' : '再看看綠色的答案'),
+          h('button', { class: 'primary', onclick: () => showSheet(questions, i + 1) }, i === questions.length - 1 ? '完成任務單' : '下一題', icon(i === questions.length - 1 ? 'check' : 'next')),
         );
       } else if (q.multi) {
         foot.replaceChildren(h('button', { class: 'primary', text: '送出', disabled: chosen.size === 0, onclick: submit }));

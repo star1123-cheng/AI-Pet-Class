@@ -18,3 +18,8 @@ serials*.csv
 # clasp 專案設定（含 scriptId，只留在本機）
 .clasp.json
 dist/
+
+# impeccable 設計流程的暫存（草圖、截圖）；設計簡報 .impeccable/surfaces/ 要進 Git
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/build/

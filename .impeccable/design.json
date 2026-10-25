@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-25T00:00:00+08:00",
+  "title": "Design System: 我的 AI 寵物",
+  "extensions": {
+    "colorMeta": {
+      "blue": { "role": "primary", "displayName": "行動藍", "canonical": "oklch(56.5% 0.204 262.8)", "tonalRamp": ["#0f0060", "#000084", "#002aa8", "#1650ce", "#3976f7", "#5d9dff", "#81c5ff", "#a4ebff"] },
+      "blue-deep": { "role": "primary", "displayName": "深行動藍", "canonical": "oklch(46.9% 0.185 263.5)", "tonalRamp": ["#0b0058", "#00007b", "#042f9f", "#2252c4", "#4378ed", "#669fff", "#8ac6ff", "#adebff"] },
+      "blue-soft": { "role": "primary", "displayName": "淡行動藍", "canonical": "oklch(94.2% 0.027 265.5)", "tonalRamp": ["#060b17", "#1e2432", "#39404f", "#565e6e", "#788091", "#9ca5b6", "#c2cbdd", "#e6efff"] },
+      "gold": { "role": "secondary", "displayName": "寵物卡金", "canonical": "oklch(87.9% 0.162 90.9)", "tonalRamp": ["#220000", "#401700", "#5f3600", "#805600", "#a47900", "#ca9f00", "#f2c52c", "#ffea5c"] },
+      "gold-deep": { "role": "secondary", "displayName": "深金", "canonical": "oklch(69.9% 0.144 82.9)", "tonalRamp": ["#250000", "#431300", "#633300", "#845200", "#a97600", "#d09b16", "#f8c14d", "#ffe574"] },
+      "sky": { "role": "secondary", "displayName": "天藍卡框", "canonical": "oklch(81.2% 0.100 247.0)", "tonalRamp": ["#00082f", "#002451", "#004271", "#276292", "#4b85b9", "#6faae0", "#95d1ff", "#bdf5ff"] },
+      "good": { "role": "tertiary", "displayName": "對（綠）", "canonical": "oklch(51.3% 0.115 156.8)", "tonalRamp": ["#001600", "#003208", "#005025", "#007042", "#399464", "#61ba87", "#88e1ac", "#acffcf"] },
+      "good-soft": { "role": "tertiary", "displayName": "淡綠", "canonical": "oklch(94.9% 0.026 161.9)", "tonalRamp": ["#020e08", "#192820", "#34443c", "#516259", "#73857b", "#97aaa0", "#bdd0c5", "#e0f4e9"] },
+      "bad": { "role": "tertiary", "displayName": "錯（珊瑚紅）", "canonical": "oklch(55.3% 0.186 22.5)", "tonalRamp": ["#3c0000", "#620000", "#880004", "#ae1027", "#d9434a", "#ff6c6d", "#ff9391", "#ffb8b4"] },
+      "bad-soft": { "role": "tertiary", "displayName": "淡珊瑚紅", "canonical": "oklch(93.9% 0.027 14.9)", "tonalRamp": ["#150608", "#301f20", "#4d3a3b", "#6c5859", "#907a7b", "#b59e9f", "#dcc4c5", "#ffe7e8"] },
+      "table": { "role": "neutral", "displayName": "卡桌灰藍", "canonical": "oklch(95.8% 0.010 267.4)", "tonalRamp": ["#090b0f", "#222429", "#3d4045", "#5b5e63", "#7d8086", "#a2a4ab", "#c8cad1", "#ebeef5"] },
+      "table-2": { "role": "neutral", "displayName": "深卡桌", "canonical": "oklch(92.5% 0.017 267.8)", "tonalRamp": ["#080b12", "#20242d", "#3c4049", "#595d68", "#7c808b", "#a0a4b0", "#c6cad6", "#e9eefa"] },
+      "ink": { "role": "neutral", "displayName": "深靛墨", "canonical": "oklch(26.2% 0.058 277.5)", "tonalRamp": ["#070723", "#1e203f", "#383d5e", "#555b7e", "#777da3", "#9ba2c9", "#c1c8f1", "#e4ecff"] },
+      "ink-2": { "role": "neutral", "displayName": "次要靛墨", "canonical": "oklch(43.3% 0.067 276.7)", "tonalRamp": ["#060526", "#1c2044", "#373c63", "#545a83", "#767da8", "#99a1cf", "#bfc7f6", "#e2ebff"] },
+      "line": { "role": "neutral", "displayName": "分隔線", "canonical": "oklch(85.8% 0.027 269.6)", "tonalRamp": ["#070a17", "#1f2432", "#3a3f4f", "#575d6e", "#7a8091", "#9ea4b6", "#c3cadd", "#e7eeff"] },
+      "locked": { "role": "neutral", "displayName": "鎖住灰", "canonical": "oklch(57.4% 0.058 276.1)", "tonalRamp": ["#060723", "#1d213f", "#373d5e", "#555b7e", "#777ea3", "#9aa2c9", "#c0c8f1", "#e3ecff"] },
+      "panel": { "role": "neutral", "displayName": "白面板", "canonical": "oklch(100% 0 0)", "tonalRamp": ["#0b0b0b", "#242424", "#404040", "#5d5d5d", "#808080", "#a4a4a4", "#cacaca", "#eeeeee"] },
+      "paper": { "role": "neutral", "displayName": "卡面奶白", "canonical": "oklch(98.7% 0.023 96.0)", "tonalRamp": ["#0e0b02", "#272417", "#434032", "#615e4f", "#848071", "#a9a595", "#cfcbba", "#f3efde"] },
+      "note": { "role": "neutral", "displayName": "便條黃", "canonical": "oklch(96.0% 0.063 94.7)", "tonalRamp": ["#140900", "#2e2300", "#4a3f13", "#695d32", "#8c8054", "#b1a577", "#d7cb9c", "#fcefbf"] }
+    },
+    "gradients": [
+      { "name": "holo", "value": "conic-gradient(from 200deg, #ff7eb6, #ffd23f, #7dffb0, #6ec8ff, #b18cff, #ff7eb6)", "purpose": "★★★ 閃卡彩虹框，只用在道具卡與任務卡外框。" },
+      { "name": "art-window", "value": "radial-gradient(circle at 50% 60%, #ffffff 0 30%, transparent 70%), linear-gradient(150deg, #cfe6ff, #f1dcff 55%, #d2f7e6)", "purpose": "寵物卡插圖窗的柔光底。" },
+      { "name": "sheen", "value": "linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.85) 50%, transparent 65%)", "purpose": "道具翻卡時掃過一次的閃卡反光。" }
+    ],
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "一屏一個的大標，例如領養卡標題。" },
+      "headline": { "displayName": "Headline", "purpose": "活動標題與題目句（26px）。" },
+      "title": { "displayName": "Title", "purpose": "區塊標題、對話泡泡。" },
+      "stat": { "displayName": "Stat", "purpose": "寵物卡數值列；準確率數字放大到 26px。" },
+      "body": { "displayName": "Body", "purpose": "說明與卡片文字；18px 是全站最小字級。" },
+      "label": { "displayName": "Label", "purpose": "按鈕文字；首頁主要按鈕 24px、小按鈕 19px、對錯按鈕 30px。" },
+      "serial": { "displayName": "Serial", "purpose": "6 碼序號，等寬加字距；輸入框 40px、頂列 20px。" }
+    },
+    "shadows": [
+      { "name": "lift", "value": "0 2px 4px rgba(30, 33, 64, 0.08), 0 8px 20px rgba(30, 33, 64, 0.1)", "purpose": "道具小卡、任務卡、對話泡泡放在卡桌上。" },
+      { "name": "lift-big", "value": "0 4px 10px rgba(30, 33, 64, 0.12), 0 18px 40px rgba(30, 33, 64, 0.18)", "purpose": "寵物卡、領養卡、彈窗。" },
+      { "name": "primary-glow", "value": "0 3px 8px rgba(47, 107, 235, 0.35)", "purpose": "主要按鈕；按下時縮成 0 1px 3px。" },
+      { "name": "done-ring", "value": "var(--lift), 0 0 0 3px var(--good)", "purpose": "已完成的任務卡外圈。" },
+      { "name": "focus-ring", "value": "outline: 3px solid var(--blue); outline-offset: 3px", "purpose": "按鈕的 :focus-visible。" }
+    ],
+    "motion": [
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "進度條、彈窗浮起、道具翻卡。" },
+      { "name": "press", "value": "transform 0.12s ease-out; translateY(2px) scale(0.98)", "purpose": "按鈕按下。" },
+      { "name": "meter", "value": "width 0.6s cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "資料品質進度條；接龍機率條用 0.35s。" },
+      { "name": "sheet-rise", "value": "translateY(16px) → 0, 0.35s", "purpose": "彈窗進場。" },
+      { "name": "card-flip", "value": "rotateY(180deg) scale(0.8) → rotateY(0) scale(1), 0.8s", "purpose": "簽名動作：得到道具時翻到正面。" },
+      { "name": "sheen-sweep", "value": "translateX(-120%) → 120%, 0.9s ease-out, delay 0.55s", "purpose": "翻卡後閃卡反光掃過一次。" },
+      { "name": "reduced-motion", "value": "@media (prefers-reduced-motion: reduce) 關閉所有 animation 與進度條 transition", "purpose": "尊重減少動態效果；翻卡直接顯示正面。" }
+    ],
+    "breakpoints": [
+      { "name": "ipad-portrait", "value": "860px" },
+      { "name": "narrow", "value": "680px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "每屏唯一的主要動作，行動藍實心。",
+      "html": "<button class=\"ds-btn ds-btn-primary\">提示詞積木 <svg width=\"1.1em\" height=\"1.1em\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 5l7 7-7 7\"/></svg></button>",
+      "css": ".ds-btn { min-height: 56px; min-width: 56px; padding: 0 24px; font: 700 21px/1.2 ui-rounded, 'SF Pro Rounded', 'PingFang TC', sans-serif; border-radius: 14px; border: 2.5px solid #1e2140; background: #fff; color: #1e2140; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, background-color 0.15s; } .ds-btn:active { transform: translateY(2px) scale(0.98); } .ds-btn:focus-visible { outline: 3px solid #2f6beb; outline-offset: 3px; } .ds-btn-primary { background: #2f6beb; border-color: #1f4fc0; color: #fff; font-weight: 800; box-shadow: 0 3px 8px rgba(47, 107, 235, 0.35); } .ds-btn-primary:active { box-shadow: 0 1px 3px rgba(47, 107, 235, 0.35); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "白底墨框的一般動作；ghost 版給「換人」這類會離開的動作。",
+      "html": "<div style=\"display:flex;gap:12px\"><button class=\"ds-btn2\">第 3 堂：AI 怎麼說話</button><button class=\"ds-btn2 ds-btn2-ghost\">換人</button></div>",
+      "css": ".ds-btn2 { min-height: 56px; padding: 0 24px; font: 700 21px/1.2 ui-rounded, 'PingFang TC', sans-serif; border-radius: 14px; border: 2.5px solid #1e2140; background: #fff; color: #1e2140; transition: transform 0.12s ease-out; } .ds-btn2:active { transform: translateY(2px) scale(0.98); } .ds-btn2:focus-visible { outline: 3px solid #2f6beb; outline-offset: 3px; } .ds-btn2-ghost { min-height: 48px; font-size: 19px; padding: 0 16px; border-width: 2px; border-color: #c9d0e3; color: #474d75; background: transparent; }"
+    },
+    {
+      "name": "Yes / No Buttons",
+      "kind": "button",
+      "refersTo": "button-yes",
+      "description": "判斷對錯：顏色、符號、文字三者並存。",
+      "html": "<div style=\"display:flex;gap:12px;width:420px\"><button class=\"ds-yn ds-yes\"><svg width=\"34\" height=\"34\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"7.5\"/></svg>對</button><button class=\"ds-yn ds-no\"><svg width=\"34\" height=\"34\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M6 6l12 12M18 6L6 18\"/></svg>錯</button></div>",
+      "css": ".ds-yn { flex: 1; min-height: 88px; font: 800 30px/1.2 ui-rounded, 'PingFang TC', sans-serif; border-radius: 14px; border: 3px solid; background: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.12s ease-out; } .ds-yn:active { transform: translateY(2px) scale(0.98); } .ds-yn:focus-visible { outline: 3px solid #2f6beb; outline-offset: 3px; } .ds-yes { border-color: #167a4b; color: #167a4b; } .ds-no { border-color: #c8323c; color: #c8323c; }"
+    },
+    {
+      "name": "Serial Input",
+      "kind": "input",
+      "refersTo": "serial-input",
+      "description": "遊戲裡唯一需要打字的地方：6 碼序號。",
+      "html": "<input class=\"ds-serial\" maxlength=\"8\" value=\"AE2RT6\" aria-label=\"序號\">",
+      "css": ".ds-serial { width: 380px; height: 76px; font: 800 40px/1 ui-monospace, Menlo, monospace; letter-spacing: 0.3em; text-indent: 0.3em; text-align: center; text-transform: uppercase; border: 3px solid #1e2140; border-radius: 16px; background: #fff; color: #1e2140; caret-color: #2f6beb; } .ds-serial:focus { outline: none; border-color: #2f6beb; box-shadow: 0 0 0 4px #e3ecff; }"
+    },
+    {
+      "name": "Top Bar",
+      "kind": "nav",
+      "refersTo": "lesson-tag",
+      "description": "首頁頂列：名稱、堂次膠囊、序號與隔開的「換人」。",
+      "html": "<header class=\"ds-top\"><span class=\"ds-brand\">我的 AI 寵物</span><span class=\"ds-lesson\">第 5 堂</span><span class=\"ds-right\"><span class=\"ds-serialtag\">序號 AE2RT6</span><button class=\"ds-switch\">換人</button></span></header>",
+      "css": ".ds-top { width: 760px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; min-height: 52px; color: #1e2140; } .ds-brand { font: 800 24px ui-rounded, 'PingFang TC', sans-serif; } .ds-lesson { background: #1e2140; color: #fff; border-radius: 999px; padding: 4px 14px; font: 800 18px ui-rounded, 'PingFang TC', sans-serif; } .ds-right { justify-self: end; display: flex; align-items: center; } .ds-serialtag { font: 800 20px ui-monospace, Menlo, monospace; letter-spacing: 0.18em; color: #474d75; } .ds-switch { margin-left: 28px; min-height: 48px; padding: 0 16px; font: 700 19px ui-rounded, 'PingFang TC', sans-serif; border-radius: 14px; border: 2px solid #c9d0e3; color: #474d75; background: transparent; } .ds-switch:focus-visible { outline: 3px solid #2f6beb; outline-offset: 3px; }"
+    },
+    {
+      "name": "Pet Card",
+      "kind": "card",
+      "refersTo": "pet-card",
+      "description": "簽名元件：金框寵物卡，卡名列、插圖窗、AI 數值列。插圖窗裡的寵物畫法固定不動。",
+      "html": "<section class=\"ds-pet\"><div class=\"ds-pet-face\"><div class=\"ds-pet-head\"><span class=\"ds-pet-name\">AE2RT6</span><span class=\"ds-pet-acc\">準確率 <b>72%</b></span></div><div class=\"ds-pet-art\"></div><dl class=\"ds-pet-stats\"><div><dt>資料量</dt><dd>24 張</dd></div><div><dt>資料品質</dt><dd><span class=\"ds-meter\"><i style=\"width:78%\"></i></span>78</dd></div><div><dt>訓練次數</dt><dd>12 次</dd></div></dl></div></section>",
+      "css": ".ds-pet { width: 360px; background: #ffd23f; border-radius: 26px; padding: 12px; box-shadow: 0 4px 10px rgba(30,33,64,0.12), 0 18px 40px rgba(30,33,64,0.18); color: #1e2140; font: 500 18px/1.55 -apple-system, 'PingFang TC', sans-serif; font-variant-numeric: tabular-nums; } .ds-pet-face { background: #fffbea; border-radius: 17px; padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; } .ds-pet-head { display: flex; align-items: baseline; justify-content: space-between; } .ds-pet-name { font: 800 22px ui-monospace, Menlo, monospace; letter-spacing: 0.12em; } .ds-pet-acc { font: 700 18px ui-rounded, 'PingFang TC', sans-serif; color: #474d75; } .ds-pet-acc b { font-size: 26px; color: #1e2140; } .ds-pet-art { aspect-ratio: 4 / 3; border: 3px solid #1e2140; border-radius: 12px; background: radial-gradient(circle at 50% 60%, #fff 0 30%, transparent 70%), linear-gradient(150deg, #cfe6ff, #f1dcff 55%, #d2f7e6); } .ds-pet-stats { margin: 0; display: flex; flex-direction: column; gap: 6px; } .ds-pet-stats div { display: grid; grid-template-columns: 5.5em 1fr; align-items: center; gap: 10px; border-top: 1.5px solid #ece3c2; padding-top: 6px; } .ds-pet-stats dt { color: #474d75; font-weight: 600; } .ds-pet-stats dd { margin: 0; display: flex; align-items: center; gap: 10px; justify-content: flex-end; font: 800 24px ui-rounded, 'PingFang TC', sans-serif; } .ds-meter { flex: 1; height: 12px; border-radius: 6px; background: #ece3c2; overflow: hidden; } .ds-meter i { display: block; height: 100%; background: #2f6beb; border-radius: 6px; }"
+    },
+    {
+      "name": "Item Cards (tiers)",
+      "kind": "card",
+      "refersTo": "item-card-t1",
+      "description": "作品道具小卡：★ 天藍、★★ 金、★★★ 閃卡彩虹框；沒得到是虛線「？」。",
+      "html": "<div class=\"ds-items\"><div class=\"ds-item\"><div class=\"ds-in\">計分<span class=\"ds-stars\">★</span></div></div><div class=\"ds-item ds-t2\"><div class=\"ds-in\">音效<span class=\"ds-stars\">★★</span></div></div><div class=\"ds-item ds-t3\"><div class=\"ds-in\">角色動畫<span class=\"ds-stars\">★★★</span></div></div><div class=\"ds-item ds-locked\" aria-label=\"還沒得到\"><div class=\"ds-in\"><svg width=\"30\" height=\"30\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01\"/></svg></div></div></div>",
+      "css": ".ds-items { display: grid; grid-template-columns: repeat(4, 130px); gap: 12px; } .ds-item { border-radius: 14px; padding: 6px; background: #8cc8ff; box-shadow: 0 2px 4px rgba(30,33,64,0.08), 0 8px 20px rgba(30,33,64,0.1); } .ds-t2 { background: #ffd23f; } .ds-t3 { background: conic-gradient(from 200deg, #ff7eb6, #ffd23f, #7dffb0, #6ec8ff, #b18cff, #ff7eb6); } .ds-in { background: #fffbea; border-radius: 9px; min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; font: 800 19px/1.2 ui-rounded, 'PingFang TC', sans-serif; color: #1e2140; } .ds-stars { color: #9a6f00; font-size: 16px; letter-spacing: 1px; } .ds-locked { background: none; box-shadow: none; border: 2.5px dashed #6f769b; padding: 3.5px; } .ds-locked .ds-in { background: transparent; color: #6f769b; }"
+    },
+    {
+      "name": "Quest Card",
+      "kind": "card",
+      "refersTo": "quest-card",
+      "description": "第 3 堂活動卡：卡框依稀有度，插圖窗帶星數與建議順序；已完成加綠圈與 ✓。",
+      "html": "<button class=\"ds-quest ds-quest-t2\"><span class=\"ds-quest-art\"><span class=\"ds-quest-stars\">★★</span><span class=\"ds-quest-step\">3</span><svg width=\"46\" height=\"46\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14.5 4.5a4.5 4.5 0 0 0-4.3 5.8L4.6 16a2 2 0 0 0 2.8 2.8l5.7-5.6a4.5 4.5 0 0 0 5.8-4.3l-2.6 2.6-2.8-.6-.6-2.8z\"/></svg></span><span class=\"ds-quest-name\">修好牠的嘴巴</span><span class=\"ds-quest-note\">調低溫度 › 音效</span></button>",
+      "css": ".ds-quest { position: relative; width: 280px; min-height: 220px; display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 10px 10px 12px; border-radius: 18px; border: 5px solid transparent; background: linear-gradient(#fffbea, #fffbea) padding-box, linear-gradient(#1e2140, #1e2140) border-box; box-shadow: 0 2px 4px rgba(30,33,64,0.08), 0 8px 20px rgba(30,33,64,0.1); color: #1e2140; transition: transform 0.12s ease-out; } .ds-quest:active { transform: translateY(2px) scale(0.98); } .ds-quest:focus-visible { outline: 3px solid #2f6beb; outline-offset: 3px; } .ds-quest-t2 { background: linear-gradient(#fffbea, #fffbea) padding-box, linear-gradient(#ffd23f, #ffd23f) border-box; } .ds-quest-art { position: relative; height: 92px; border-radius: 10px; border: 2.5px solid #1e2140; display: grid; place-items: center; background: linear-gradient(150deg, #fff1b8, #fff9e0); } .ds-quest-stars { position: absolute; left: 8px; top: 6px; color: #9a6f00; font-size: 16px; } .ds-quest-step { position: absolute; top: 6px; right: 8px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #1e2140; color: #fff; font: 800 18px/1 ui-rounded, sans-serif; } .ds-quest-name { font: 800 21px/1.25 ui-rounded, 'PingFang TC', sans-serif; padding: 0 4px; } .ds-quest-note { font: 500 18px/1.4 -apple-system, 'PingFang TC', sans-serif; color: #474d75; padding: 0 4px; }"
+    },
+    {
+      "name": "Sheet (popup)",
+      "kind": "custom",
+      "refersTo": "sheet",
+      "description": "彈窗是一張攤開的奶白卡，由下往上浮起。",
+      "html": "<div class=\"ds-sheet\"><div class=\"ds-sheet-icon\"><svg width=\"40\" height=\"40\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 9h10v11H9z\"/><path d=\"M15 9V4H5v11h4\"/></svg></div><h2 class=\"ds-sheet-title\">已複製提示詞</h2><p>貼到 Gemini Canvas 試試看。</p><button class=\"ds-sheet-btn\">好</button></div>",
+      "css": ".ds-sheet { width: 480px; background: #fffbea; border: 3px solid #1e2140; border-radius: 22px; padding: 22px 26px; display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; color: #1e2140; font: 500 18px/1.55 -apple-system, 'PingFang TC', sans-serif; box-shadow: 0 4px 10px rgba(30,33,64,0.12), 0 18px 40px rgba(30,33,64,0.18); animation: ds-rise 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; } @keyframes ds-rise { from { transform: translateY(16px); } } @media (prefers-reduced-motion: reduce) { .ds-sheet { animation: none; } } .ds-sheet-icon { width: 72px; height: 72px; border-radius: 20px; display: grid; place-items: center; background: #e3ecff; color: #1f4fc0; } .ds-sheet-title { margin: 0; font: 800 24px/1.25 ui-rounded, 'PingFang TC', sans-serif; } .ds-sheet-btn { min-height: 56px; padding: 0 24px; font: 800 21px/1.2 ui-rounded, 'PingFang TC', sans-serif; border-radius: 14px; border: 2.5px solid #1f4fc0; background: #2f6beb; color: #fff; } .ds-sheet-btn:focus-visible { outline: 3px solid #2f6beb; outline-offset: 3px; }"
+    },
+    {
+      "name": "Item Reveal Flip",
+      "kind": "custom",
+      "refersTo": "item-card-t2",
+      "description": "簽名動作：道具卡從背面翻到正面，閃卡反光掃過一次；減少動態效果時直接顯示正面。",
+      "html": "<div class=\"ds-reveal\"><div class=\"ds-rcard\"><div class=\"ds-rin\">音效<span style=\"color:#9a6f00\">★★</span></div></div></div>",
+      "css": ".ds-reveal { perspective: 900px; } .ds-rcard { width: 200px; border-radius: 14px; padding: 6px; background: #ffd23f; position: relative; overflow: hidden; box-shadow: 0 2px 4px rgba(30,33,64,0.08), 0 8px 20px rgba(30,33,64,0.1); animation: ds-flip 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; } .ds-rin { background: #fffbea; border-radius: 9px; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font: 800 26px/1.2 ui-rounded, 'PingFang TC', sans-serif; color: #1e2140; } .ds-rcard::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.85) 50%, transparent 65%); transform: translateX(-120%); animation: ds-sheen 0.9s 0.55s ease-out both; pointer-events: none; } @keyframes ds-flip { 0% { transform: rotateY(180deg) scale(0.8); } 100% { transform: rotateY(0) scale(1); } } @keyframes ds-sheen { to { transform: translateX(120%); } } @media (prefers-reduced-motion: reduce) { .ds-rcard { animation: none; } .ds-rcard::after { display: none; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "我的卡，我養的數值",
+    "overview": "整個介面是一張攤在冷灰藍卡桌上的集換式卡牌。寵物是學生自己的金框卡，卡上的「資料量、資料品質、訓練次數、準確率」是他親手餵資料養出來的數值；完成任務得到的作品道具，是依稀有度換框的小卡；彈窗是一張攤開的奶白卡面。拒絕「白底圓角卡片＋綠色立體按鈕」的學習 App 預設樣子，也拒絕讓高年級覺得幼稚的糖果感：卡桌是冷靜的灰藍，字是深靛墨，熱鬧只留給卡框。\n\n密度是課堂節奏：一屏一件事、一個藍色主要動作，老師一句話全班就跟得上。iPad 橫放 1024×768 是主要畫面，直放 768 仍維持兩欄。零外部依賴：字型只用系統的 PingFang TC 與 ui-rounded，圖示是自繪 SVG，所有插圖窗用 CSS 漸層，不載入任何外部字型、圖片或 CDN。\n\n寵物本身的畫法（`pet/render.js`）是固定的品牌資產，不屬於這套系統的調整範圍；系統只負責放它的卡框與插圖窗。",
+    "keyCharacteristics": [
+      "金框寵物卡＋奶白卡面＋深靛墨粗框線，是整個世界的母體。",
+      "稀有度用卡框表達：★ 天藍、★★ 金、★★★ 閃卡彩虹框；沒得到的是虛線「？」。",
+      "藍色只給每屏唯一的主要動作。",
+      "對＝綠、錯＝珊瑚紅，一定同時有符號（⭕／✗、✓／✗）與文字。",
+      "數值用粗圓體大數字、表格數字（tabular-nums）。",
+      "簽名動作：得到道具時卡片從背面翻到正面，閃卡反光掃過一次。"
+    ],
+    "rules": [
+      { "name": "The One Blue Rule", "body": "每一屏只有一個藍色實心按鈕。首頁依堂次切換哪一顆是 `primary`，其他動作一律白底墨框。", "section": "colors" },
+      { "name": "The Frame Is the Rarity Rule", "body": "稀有度只用卡框顏色加星數表達：★ 天藍、★★ 金、★★★ 閃卡彩虹。卡面永遠是奶白，不因稀有度換底色（插圖窗可帶同色系淡漸層）。", "section": "colors" },
+      { "name": "The Never Color Alone Rule", "body": "對與錯一定同時有圖示與文字：判斷按鈕是 ⭕「對」與 ✗「錯」，回顧清單是 ✓／✗ 圖示，已完成是 ✓「已完成」。色弱學生只看形狀也能判斷。", "section": "colors" },
+      { "name": "The 18px Floor Rule", "body": "任何會被學生讀的文字都不小於 18px，包括說明、機率百分比與溫度兩端文字。", "section": "typography" },
+      { "name": "The Printed Number Rule", "body": "數值一律用粗圓體加表格數字，像印在卡上的數字，不用細字或灰色小字表示數值。", "section": "typography" },
+      { "name": "The One Screen One Action Rule", "body": "每一屏只有一件要做的事，主要按鈕在橫放與直放都不必捲動就看得到。", "section": "layout" },
+      { "name": "The Locked Is Flat Rule", "body": "沒得到、還沒開放的卡片不浮起：拿掉陰影、改成虛線框，看起來是桌上的空位。", "section": "elevation" }
+    ],
+    "dos": [
+      "**Do** 每一屏只放一顆行動藍（#2F6BEB）實心按鈕，其他按鈕用白底 2.5px 深靛墨框。",
+      "**Do** 用卡框顏色加星數表達稀有度：★ 天藍、★★ 金、★★★ 閃卡彩虹；卡面保持奶白。",
+      "**Do** 對錯同時給顏色、圖示與文字（⭕／✗「對／錯」、✓「已完成」）。",
+      "**Do** 觸控目標至少 44px（按鈕預設 56px），內文至少 18px。",
+      "**Do** 數值用 800 粗圓體加表格數字。",
+      "**Do** 新圖示照 `app/icons.js` 的規格自繪：24×24、線寬 2.2、圓角端點、`currentColor`。",
+      "**Do** 每個動畫都在 `prefers-reduced-motion: reduce` 下關掉，並確保動畫沒跑時畫面仍完整（例如寵物的 pop 不從透明開始）。",
+      "**Do** 用虛線框加鎖住灰（#6F769B）表示「還沒有」的空位。"
+    ],
+    "donts": [
+      "**Don't** 載入外部字型、圖片、圖示套件或 CDN；字型只用系統 PingFang TC 與 ui-rounded。",
+      "**Don't** 只靠顏色傳遞對錯、狀態或稀有度。",
+      "**Don't** 把藍色用在裝飾、標題或第二個主要動作上。",
+      "**Don't** 做成「白底圓角卡片＋綠色立體按鈕」的學習 App 預設樣子，也不要糖果色到讓高年級覺得幼稚。",
+      "**Don't** 修改寵物畫法（`pet/render.js`）來配合介面；介面只調整它的卡框與插圖窗。",
+      "**Don't** 用表情符號字元當介面圖示；一律用自繪 SVG。",
+      "**Don't** 把使用者輸入放進 innerHTML。"
+    ]
+  }
+}

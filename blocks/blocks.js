@@ -87,4 +87,4 @@ export const ENERGY = { 4: 8, 5: 10 };
 export const energyFor = (lesson) => ENERGY[lesson] ?? ENERGY[4];
 
 // 複製前固定顯示的提醒（守則 1、4）
-export const COPY_REMINDER = '🔒 不要輸入真實姓名、學校、電話、住址　🙋 用了 AI 幫忙，要誠實說';
+export const COPY_REMINDER = '不要輸入真實姓名、學校、電話、住址；用了 AI 幫忙，要誠實說';

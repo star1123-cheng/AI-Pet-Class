@@ -2,11 +2,14 @@
 import { GAS_URL } from '../config.js';
 import { validateSerial } from '../pet/serial.js';
 import { appearanceOf } from '../pet/appearance.js';
-import { mountPet } from '../pet/render.js';
+import { mountPet, coreLevel } from '../pet/render.js';
 import { createStore, mergePet } from './store.js';
 import { createApi } from './api.js';
 import { createLesson3 } from './lesson3.js';
 import { createPromptPage } from './prompt.js';
+import { h } from './dom.js';
+import { icon, stars } from './icons.js';
+import { SKILLS } from '../blocks/blocks.js';
 
 const FLUSH_EVERY_MS = 20000;
 
@@ -109,15 +112,27 @@ function showHome() {
 
 function renderHome() {
   $('serialTag').textContent = '序號 ' + pet.serial;
+  $('cardSerial').textContent = pet.serial;
+  $('lessonTag').textContent = `第 ${pet.lesson} 堂`;
   const s = pet.state;
-  mountPet($('pet'), pet.appearance, { label: '我的 AI 寵物', accuracy: s.accuracy ?? null });
+  // 寵物只在換人或核心亮度改變時重畫，不然背景更新堂次時牠會再跳出來一次
+  const petKey = pet.serial + '|' + coreLevel(s.accuracy ?? null);
+  if ($('pet').dataset.key !== petKey) {
+    mountPet($('pet'), pet.appearance, { label: '我的 AI 寵物', accuracy: s.accuracy ?? null });
+    $('pet').dataset.key = petKey;
+  }
   $('sData').textContent = `${s.dataCount} 張`;
   $('sQuality').textContent = String(Math.round(s.dataQuality));
+  $('sQualityBar').style.width = Math.max(0, Math.min(100, s.dataQuality)) + '%';
   $('sTrain').textContent = `${s.trainCount} 次`;
   $('sAcc').textContent = s.accuracy === null || s.accuracy === undefined ? '還沒考過' : Math.round(s.accuracy * 100) + '%';
+  renderItems();
   $('rejected').hidden = !pet.rejected;
   $('lesson3Btn').hidden = pet.lesson < 3;
   $('promptBtn').hidden = pet.lesson < 4;
+  // 一屏一個主要動作：本堂的入口是藍色，之前堂次的入口改成次要按鈕
+  $('lesson3Btn').classList.toggle('primary', pet.lesson === 3);
+  $('promptBtn').classList.toggle('primary', pet.lesson >= 4);
   showSync();
 }
 
@@ -151,11 +166,37 @@ $('switchBtn').onclick = () => {
 function showSync() {
   const left = store.queue().length;
   let text;
+  let mark = 'cloud';
   if (!GAS_URL) text = '離線模式：資料存在這台 iPad';
-  else if (left === 0) text = '✓ 已存到雲端';
-  else text = `還有 ${left} 筆資料，等網路恢復後會自動上傳`;
-  $('sync').textContent = text;
+  else if (left === 0) {
+    text = '已存到雲端';
+    mark = 'check';
+  } else text = `還有 ${left} 筆資料，等網路恢復後會自動上傳`;
+  $('sync').replaceChildren(icon(mark), text);
 }
+
+// 作品道具卡：9 格，得到的依稀有度換框，沒得到的是虛線問號
+function renderItems() {
+  const owned = new Set(pet.skills || []);
+  $('itemCount').textContent = `${SKILLS.filter((s) => owned.has(s.id)).length}／${SKILLS.length}`;
+  $('items').replaceChildren(
+    ...SKILLS.map((s) =>
+      owned.has(s.id)
+        ? h(
+            'div',
+            { class: `item t${s.star}` },
+            h('div', { class: 'in' }, h('span', { text: s.name }), stars(s.star, '18px')),
+          )
+        : h('div', { class: 'item locked', 'aria-label': '還沒得到' }, h('div', { class: 'in' }, icon('question', { size: '30px' }))),
+    ),
+  );
+}
+
+// 靜態畫面上的圖示（HTML 裡不放 emoji）
+$('adoptSlot').append(icon('cards', { size: '56px' }));
+$('rule1').prepend(icon('shield', { size: '26px' }));
+$('lesson3Btn').append(icon('next'));
+$('promptBtn').append(icon('next'));
 
 async function sync() {
   await api.flush();
