@@ -8,8 +8,35 @@ import { validateSerial } from '../pet/serial.js';
 import { CATEGORIES, SKILLS, energyFor, COPY_REMINDER } from '../blocks/blocks.js';
 import { compose, toggleBlock, normalize, mergeSkills, defaultSelection } from '../blocks/compose.js';
 import { promptOf, energyLeft, spendEnergy, promptLog } from '../blocks/log.js';
+import { canvasPet, buildCopy, fallbackCopy } from '../canvas/build.js';
+import { pickBrain } from '../engine/brain.js';
+import { phraseText } from '../talk/catchphrase.js';
 
 const PARTNER_LESSON = 5;
+const CANVAS_LESSON = 5; // 第 5 堂起，主要按鈕改成「一鍵複製範本＋提示詞」
+
+// 保底版（docs/04 第 4 節）：複製不用能量
+const FALLBACKS = [
+  { id: 'button', lesson: 4, file: 'canvas/fallback/button-score.html', name: '按鈕變色＋計分（完整版）', note: '卡住時直接貼上就能用' },
+  { id: 'broken', lesson: 4, file: 'canvas/fallback/button-broken.html', name: '壞掉的版本', note: '修復練習：貼上後，用修復句型請 Gemini 修好' },
+  { id: 'example', lesson: 5, file: 'canvas/fallback/guess-draw.html', name: 'AI 猜猜畫畫（完整範例）', note: '先讓作品跑起來，再慢慢改' },
+];
+const TEMPLATE_FILE = 'canvas/template.html';
+
+// 範本和保底版先載入好：iPad Safari 只准在點擊的當下寫剪貼簿，不能點了才去下載
+const files = {};
+function loadFiles() {
+  const list = [TEMPLATE_FILE, ...FALLBACKS.map((f) => f.file)];
+  for (const file of list) {
+    if (files[file]) continue;
+    files[file] = fetch(file)
+      .then((r) => (r.ok ? r.text() : Promise.reject(new Error(r.status))))
+      .then((text) => (files[file] = text))
+      .catch(() => delete files[file]); // 下次打開這頁再試
+  }
+  return Promise.all(list.map((file) => files[file]));
+}
+const ready = (file) => (typeof files[file] === 'string' ? files[file] : null);
 
 const SERIAL_ERRORS = {
   empty: '請輸入夥伴的序號',
@@ -97,10 +124,20 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
       h('span', { class: 'cells' }, Array.from({ length: total }, (_, i) => h('span', { class: i < left ? 'cell full' : 'cell' }))),
     );
 
+    const canvas = lesson() >= CANVAS_LESSON;
     let action;
     if (!text) action = h('p', { class: 'ask', text: '先選「做什麼」，才能複製' });
     else if (left === 0) action = h('p', { class: 'ask', text: '這堂的能量用完了。想一想要怎麼改提示詞，再請老師幫忙。' });
-    else action = h('button', { class: 'primary', onclick: () => copy(text) }, icon('copy'), '複製提示詞（用 1 點能量）');
+    else if (!canvas) action = h('button', { class: 'primary', onclick: () => copy(text) }, icon('copy'), '複製提示詞（用 1 點能量）');
+    else if (!ready(TEMPLATE_FILE)) action = h('button', { class: 'primary', disabled: true }, icon('copy'), '範本準備中…');
+    else
+      action = h(
+        'div',
+        { class: 'col' },
+        h('button', { class: 'primary', onclick: () => copy(canvasText(text, false), 'full') }, icon('copy'), '一鍵複製範本＋提示詞（用 1 點能量）'),
+        h('button', { class: 'small ghost', onclick: () => copyFree(canvasText(text, true), 'canvas', 'lite') }, '貼不上？改複製精簡版'),
+      );
+    const fallbacks = FALLBACKS.filter((f) => f.lesson === lesson());
 
     body.replaceChildren(
       h('h2', { class: 'talk-title', text: `提示詞積木（第 ${lesson()} 堂）` }),
@@ -117,32 +154,54 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
           energy,
           h('p', { class: 'rule' }, icon('shield', { size: '26px' }), COPY_REMINDER),
           action,
+          fallbacks.length ? h('button', { class: 'small', onclick: showFallbacks }, icon('cards'), '保底版') : null,
         ),
       ),
       h('button', { class: 'small', onclick: onExit }, icon('back'), '回到我的寵物'),
     );
   }
 
+  // 一鍵複製的內容：自己（＋夥伴）的寵物外型、腦袋、作品道具，加上積木組好的提示詞（docs/04 3.1）
+  // 自己的腦袋來自 pet.samples（P3 存的訓練樣本）；還沒有樣本時範本會改用假資料
+  function canvasText(text, lite) {
+    const pets = [
+      canvasPet({ appearance: pet.appearance, accuracy: pet.state?.accuracy, samples: pet.samples, phrase: phraseText(pet.talk?.phrase), name: '我的 AI 寵物', lite }),
+    ];
+    const p = prompt.partner;
+    if (p) pets.push(canvasPet({ appearance: appearanceOf(p.serial), brain: p.brain, name: '夥伴的 AI 寵物', lite }));
+    return buildCopy(ready(TEMPLATE_FILE), { pets, skills: skills(), lite }, text);
+  }
+
   // ── 複製 ──
-  function copy(text) {
+  // 剪貼簿要在點擊當下呼叫（iPad Safari 的規定），所以先寫入再存檔
+  function writeClipboard(text) {
+    return navigator.clipboard?.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error('no clipboard'));
+  }
+
+  function copied() {
+    popup(
+      h('div', { class: 'sheet-icon' }, icon('copy')),
+      h('h2', { text: '已經複製好了！' }),
+      h('p', { text: '到 Gemini Canvas，長按輸入框，選「貼上」。' }),
+      h('p', { class: 'rule' }, icon('shield', { size: '26px' }), COPY_REMINDER),
+      h('button', { class: 'primary', text: '好', onclick: closePopup }),
+    );
+  }
+
+  // kind：prompt＝只有提示詞、full＝範本＋提示詞
+  function copy(text, kind = 'prompt') {
     const next = spendEnergy(prompt, lesson());
     if (!next) return draw();
-    // 剪貼簿要在點擊當下呼叫（iPad Safari 的規定），所以先寫入再存檔
-    const writing = navigator.clipboard?.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error('no clipboard'));
+    const writing = writeClipboard(text);
     prompt = next;
     save();
     const count = prompt.used[lesson()];
     api.logPrompt(promptLog(pet.serial, lesson(), selected, count));
+    if (kind === 'full') api.logEvent(pet.serial, lesson(), 'canvas', 'full', count);
     writing.then(
       () => {
         api.logEvent(pet.serial, lesson(), 'copy', 'ok', count);
-        popup(
-          h('div', { class: 'sheet-icon' }, icon('copy')),
-          h('h2', { text: '已經複製好了！' }),
-          h('p', { text: '到 Gemini Canvas，長按輸入框，選「貼上」。' }),
-          h('p', { class: 'rule' }, icon('shield', { size: '26px' }), COPY_REMINDER),
-          h('button', { class: 'primary', text: '好', onclick: closePopup }),
-        );
+        copied();
       },
       () => {
         api.logEvent(pet.serial, lesson(), 'copy', 'fallback', count);
@@ -150,6 +209,33 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
       },
     );
     draw();
+  }
+
+  // 不用能量的複製：精簡版（貼上失敗時）與保底版
+  function copyFree(text, type, code) {
+    const writing = writeClipboard(text);
+    api.logEvent(pet.serial, lesson(), type, code, 0);
+    writing.then(copied, () => showFallback(text));
+  }
+
+  function showFallbacks() {
+    const list = FALLBACKS.filter((f) => f.lesson === lesson());
+    popup(
+      h('div', { class: 'sheet-icon' }, icon('cards')),
+      h('h2', { text: '保底版' }),
+      h('p', { text: '複製後貼進 Gemini Canvas。保底版不用能量。' }),
+      ...list.map((f) =>
+        h(
+          'div',
+          { class: 'partner' },
+          h('div', { class: 'col' }, h('p', {}, h('b', { text: f.name })), h('p', { class: 'muted', text: f.note })),
+          ready(f.file)
+            ? h('button', { class: 'small', onclick: () => copyFree(fallbackCopy(ready(f.file)), 'fallback', f.id) }, icon('copy'), '複製')
+            : h('button', { class: 'small', disabled: true, text: '準備中…' }),
+        ),
+      ),
+      h('button', { class: 'small', text: '關閉', onclick: closePopup }),
+    );
   }
 
   // 剪貼簿不能用時：文字框全選，請學生長按「拷貝」
@@ -227,7 +313,8 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
       go.textContent = '合併';
       if (!res) return (error.textContent = SERIAL_ERRORS.offline);
       if (!res.ok) return (error.textContent = SERIAL_ERRORS[res.error] || SERIAL_ERRORS.offline);
-      prompt.partner = { serial: v.serial, skills: mergeSkills(res.skills || []) };
+      // 夥伴的腦袋只存挑好的那份（≤ 4 KB），一鍵複製時放進範本
+      prompt.partner = { serial: v.serial, skills: mergeSkills(res.skills || []), brain: pickBrain(res.brain || []) };
       save();
       api.logEvent(pet.serial, lesson(), 'partner', 'merge', prompt.partner.skills.length);
       input.blur();
@@ -253,6 +340,7 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
       selected = prompt.selected || defaultSelection();
       closePopup();
       draw();
+      loadFiles().then(() => !root.hidden && draw());
     },
   };
 }

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>按鈕變色＋計分</title>
+<style>
+  :root { --table: #eef1f8; --ink: #1e2140; --ink-2: #474d75; --paper: #fffbea; --gold: #ffd23f; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    background: var(--table);
+    color: var(--ink);
+    font: 500 18px/1.55 -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+  h1 { margin: 0; font: 800 32px/1.2 ui-rounded, "PingFang TC", sans-serif; }
+  .score { background: var(--paper); border: 3px solid var(--ink); border-radius: 18px; padding: 8px 28px; font: 800 40px/1.2 ui-rounded, "PingFang TC", sans-serif; }
+  #magic {
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    border: 6px solid var(--ink);
+    background: #2f6beb;
+    color: #fff;
+    font: 800 32px/1.2 ui-rounded, "PingFang TC", sans-serif;
+  }
+  #magic:active { transform: scale(0.95); }
+  p { margin: 0; color: var(--ink-2); }
+</style>
+</head>
+<body>
+  <h1>變色按鈕</h1>
+  <div class="score">分數：<span id="score">0</span></div>
+  <button id="magic">按我！</button>
+  <p>每按一次，按鈕換一種顏色，分數加 1。</p>
+<script>
+  var colors = ['#2f6beb', '#e2504b', '#167a4b', '#9a6f00', '#7a4fd0', '#d4457a'];
+  var score = 0;
+  var button = document.getElementById('magic');
+  var scoreText = document.getElementById('score');
+
+  button.addEventListener('clik', function () {
+    score + 1;
+    scoreText.textContent = score;
+    button.style.background = colors[score % colors.length];
+  });
+</script>
+</body>
+</html>

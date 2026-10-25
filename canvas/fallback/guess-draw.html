@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>AI 猜猜畫畫</title>
+<!--
+  AI 猜猜畫畫：抽一個題目，用手指畫，AI 寵物用自己的「腦袋」（訓練過的範例）猜你畫什麼。
+  可以改：主題色（:root 的顏色）、題目數、規則、文字、外觀。
+  請保留：ENGINE 區塊（AI 寵物怎麼猜）、DATA 區塊（寵物外型與腦袋）、每個 SKILL 區塊的開頭與結尾標記。
+  單一 HTML 檔，不載入任何外部圖片、字型或程式。
+-->
+<style>
+  :root {
+    --table: #eef1f8;  /* 背景 */
+    --ink: #1e2140;    /* 字與框線 */
+    --ink-2: #474d75;
+    --line: #c9d0e3;
+    --panel: #ffffff;
+    --paper: #fffbea;  /* 卡面 */
+    --gold: #ffd23f;   /* 寵物卡框 */
+    --blue: #2f6beb;   /* 主要按鈕 */
+    --blue-deep: #1f4fc0;
+    --good: #167a4b;
+    --good-soft: #e0f4e9;
+    --bad: #c8323c;
+    --bad-soft: #fde4e5;
+    --holo: conic-gradient(from 200deg, #ff7eb6, #ffd23f, #7dffb0, #6ec8ff, #b18cff, #ff7eb6);
+    --round: ui-rounded, "SF Pro Rounded", "PingFang TC", "Noto Sans TC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--table);
+    color: var(--ink);
+    font: 500 18px/1.55 -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+    font-variant-numeric: tabular-nums;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  [hidden] { display: none !important; }
+  h1, h2, p { margin: 0; }
+  h1, h2, .question { font-family: var(--round); font-weight: 800; }
+  .app { max-width: 1000px; margin: 0 auto; padding: max(14px, env(safe-area-inset-top)) 20px 20px; display: flex; flex-direction: column; gap: 14px; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 28px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { background: var(--panel); border: 2px solid var(--ink); border-radius: 999px; padding: 4px 14px; font: 800 20px/1.3 var(--round); display: inline-flex; gap: 8px; align-items: baseline; }
+  .chip small { font: 700 16px/1 var(--round); color: var(--ink-2); }
+  .stage { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+  @media (max-width: 820px) { .stage { grid-template-columns: 1fr; } .pets { flex-direction: row; } }
+  .board { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .question { font-size: 26px; }
+  .question b { display: inline-block; min-width: 2.5em; padding: 0 12px; margin-left: 6px; border: 3px solid var(--ink); border-radius: 12px; background: var(--paper); text-align: center; }
+  .pad-frame { width: min(100%, 460px, 58dvh); aspect-ratio: 1; background: var(--gold); border-radius: 22px; padding: 10px; box-shadow: 0 4px 10px rgba(30, 33, 64, 0.12), 0 18px 40px rgba(30, 33, 64, 0.16); }
+  #pad { width: 100%; height: 100%; display: block; background: var(--panel); border: 3px solid var(--ink); border-radius: 14px; touch-action: none; cursor: crosshair; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  button { min-height: 56px; min-width: 56px; padding: 0 24px; font: 700 21px/1.2 var(--round); border-radius: 14px; border: 2.5px solid var(--ink); background: var(--panel); color: var(--ink); }
+  button:active { transform: translateY(2px) scale(0.98); }
+  button:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+  button.primary { background: var(--blue); border-color: var(--blue-deep); color: #fff; font-weight: 800; box-shadow: 0 3px 8px rgba(47, 107, 235, 0.35); }
+  .pets { display: flex; flex-direction: column; gap: 14px; }
+  .pet-card { flex: 1; background: var(--gold); border-radius: 22px; padding: 9px; box-shadow: 0 2px 4px rgba(30, 33, 64, 0.08), 0 8px 20px rgba(30, 33, 64, 0.1); }
+  .pet-face { background: var(--paper); border: 2.5px solid var(--ink); border-radius: 15px; padding: 8px 12px 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+  .pet-art { width: 130px; height: 130px; }
+  .pet-art svg { width: 100%; height: 100%; }
+  .pet-name { font: 800 19px/1.2 var(--round); }
+  .bubble { position: relative; width: 100%; min-height: 2.4em; background: var(--panel); border: 2px solid var(--ink); border-radius: 14px; padding: 6px 10px; font: 700 20px/1.35 var(--round); }
+  .bubble small { display: block; font: 600 17px/1.3 var(--round); color: var(--ink-2); }
+  .say { font: 700 18px/1.35 var(--round); color: var(--blue-deep); min-height: 1.35em; }
+  .result { text-align: center; font: 800 24px/1.3 var(--round); min-height: 1.3em; }
+  .result.ok { color: var(--good); }
+  .result.no { color: var(--bad); }
+  .toast { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); background: var(--ink); color: #fff; border-radius: 999px; padding: 8px 20px; font: 800 20px/1.3 var(--round); }
+  .overlay { position: fixed; inset: 0; background: rgba(30, 33, 64, 0.45); display: grid; place-items: center; padding: 20px; }
+  .sheet { width: min(520px, 100%); background: var(--paper); border: 3px solid var(--ink); border-radius: 22px; padding: 24px; display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; }
+  .sheet.holo { border: 8px solid transparent; background: linear-gradient(var(--paper), var(--paper)) padding-box, var(--holo) border-box; }
+  .sheet h2 { font-size: 28px; }
+  .sheet p { white-space: pre-line; }
+  .jump { animation: jump 0.5s ease-out; }
+  .shake { animation: shake 0.5s ease-in-out; }
+  @keyframes jump { 40% { transform: translateY(-22px); } }
+  @keyframes shake { 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+  @media (prefers-reduced-motion: reduce) { .jump, .shake { animation: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>AI 猜猜畫畫</h1>
+    <div id="chips" class="chips"></div>
+  </header>
+  <main class="stage">
+    <section class="board">
+      <p class="question">請畫：<b id="target">？</b></p>
+      <div class="pad-frame"><canvas id="pad" width="640" height="640" aria-label="畫畫區，用手指畫"></canvas></div>
+      <div class="row">
+        <button id="clear">重畫</button>
+        <button id="go" class="primary">畫好了，讓 AI 猜</button>
+        <button id="next" class="primary" hidden>下一題</button>
+      </div>
+      <p id="result" class="result" role="status"></p>
+    </section>
+    <aside id="pets" class="pets"></aside>
+  </main>
+</div>
+<div id="toast" class="toast" hidden></div>
+<div id="overlay" class="overlay" hidden>
+  <div id="sheet" class="sheet" role="dialog" aria-modal="true">
+    <h2 id="sheet-title"></h2>
+    <p id="sheet-text"></p>
+    <button id="sheet-btn" class="primary"></button>
+  </div>
+</div>
+<script>
+/* === DATA === */
+var PET_DATA = {"pets":[{"name":"示範寵物","svg":"<svg viewBox=\"0 0 200 200\" width=\"130\" height=\"130\" role=\"img\" aria-label=\"示範寵物\"><defs><clipPath id=\"petclip0h\"><path d=\"M100 42 C142 42 164 68 164 100 C164 130 138 148 100 148 C62 148 36 130 36 100 C36 68 58 42 100 42Z\"/><\/clipPath><clipPath id=\"petclip0b\"><path d=\"M100 132 C124 132 140 146 140 162 C140 180 122 188 100 188 C78 188 60 180 60 162 C60 146 76 132 100 132Z\"/><\/clipPath><\/defs><ellipse cx=\"100\" cy=\"191\" rx=\"50\" ry=\"6\" fill=\"#000\" opacity=\"0.08\"/><g class=\"pet-tail\"><path d=\"M132 172 C168 174 178 140 162 120\" fill=\"none\" stroke=\"#1f4b70\" stroke-width=\"14\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M132 172 C168 174 178 140 162 120\" fill=\"none\" stroke=\"#a7d4f5\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><\/g><path d=\"M52 70 L60 26 L94 46Z\" fill=\"#a7d4f5\" stroke=\"#1f4b70\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M60 62 L63 36 L84 48Z\" fill=\"#ffc2cc\"/><g transform=\"translate(200 0) scale(-1 1)\"><path d=\"M52 70 L60 26 L94 46Z\" fill=\"#a7d4f5\" stroke=\"#1f4b70\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M60 62 L63 36 L84 48Z\" fill=\"#ffc2cc\"/><\/g><path d=\"M100 132 C124 132 140 146 140 162 C140 180 122 188 100 188 C78 188 60 180 60 162 C60 146 76 132 100 132Z\" fill=\"#a7d4f5\"/><g clip-path=\"url(#petclip0b)\"><\/g><path d=\"M100 132 C124 132 140 146 140 162 C140 180 122 188 100 188 C78 188 60 180 60 162 C60 146 76 132 100 132Z\" fill=\"none\" stroke=\"#1f4b70\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"84\" cy=\"185\" rx=\"10\" ry=\"7\" fill=\"#a7d4f5\" stroke=\"#1f4b70\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"116\" cy=\"185\" rx=\"10\" ry=\"7\" fill=\"#a7d4f5\" stroke=\"#1f4b70\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M100 42 C142 42 164 68 164 100 C164 130 138 148 100 148 C62 148 36 130 36 100 C36 68 58 42 100 42Z\" fill=\"#a7d4f5\"/><g clip-path=\"url(#petclip0h)\"><\/g><path d=\"M100 42 C142 42 164 68 164 100 C164 130 138 148 100 148 C62 148 36 130 36 100 C36 68 58 42 100 42Z\" fill=\"none\" stroke=\"#1f4b70\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><g transform=\"translate(200 0) scale(-1 1)\"><\/g><ellipse cx=\"62\" cy=\"116\" rx=\"8\" ry=\"5\" fill=\"#ff8fa3\" opacity=\"0.45\"/><ellipse cx=\"138\" cy=\"116\" rx=\"8\" ry=\"5\" fill=\"#ff8fa3\" opacity=\"0.45\"/><g class=\"pet-eyes\"><ellipse cx=\"78\" cy=\"98\" rx=\"6.5\" ry=\"7.5\" fill=\"#2a2320\"/><circle cx=\"80\" cy=\"95\" r=\"2.4\" fill=\"#fff\"/><ellipse cx=\"122\" cy=\"98\" rx=\"6.5\" ry=\"7.5\" fill=\"#2a2320\"/><circle cx=\"124\" cy=\"95\" r=\"2.4\" fill=\"#fff\"/><\/g><path d=\"M94 110 H106 L100 117Z\" fill=\"#ff8fa3\" stroke=\"#1f4b70\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M100 117 Q100 123 93 123 M100 117 Q100 123 107 123\" fill=\"none\" stroke=\"#1f4b70\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M58 112 L38 107 M58 118 L38 120 M142 112 L162 107 M142 118 L162 120\" fill=\"none\" stroke=\"#1f4b70\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" opacity=\"0.55\"/><g transform=\"rotate(14 134 58)\"><path d=\"M134 58 L116 47 L116 69Z M134 58 L152 47 L152 69Z\" fill=\"#ff5d73\" stroke=\"#1f4b70\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"134\" cy=\"58\" r=\"5\" fill=\"#ff5d73\" stroke=\"#1f4b70\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><\/g><g class=\"pet-core pet-core-3\"><circle cx=\"100\" cy=\"168\" r=\"17\" fill=\"#fff\" opacity=\"0.7\"/><circle cx=\"100\" cy=\"168\" r=\"17\" fill=\"#4de8f4\" opacity=\"0.4\"/><path d=\"M100.0 161.0 L106.1 164.5 L106.1 171.5 L100.0 175.0 L93.9 171.5 L93.9 164.5Z\" fill=\"#4de8f4\" fill-opacity=\"1\" stroke=\"#1f4b70\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"100\" cy=\"168\" r=\"2.5\" fill=\"#fff\" opacity=\"1\"/><path d=\"M84 151 L85.5 154.5 L89 156 L85.5 157.5 L84 161 L82.5 157.5 L79 156 L82.5 154.5Z\" fill=\"#fff\" stroke=\"#4de8f4\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M117 155 L118.2 157.8 L121 159 L118.2 160.2 L117 163 L115.8 160.2 L113 159 L115.8 157.8Z\" fill=\"#fff\" stroke=\"#4de8f4\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><\/g><\/svg>","brain":{"圓":["00000000000000000000000000000000000000000015000000af900001fbe40006d5b4000690b40006e5b40001fbe400006f90000005000000000000000000000055500001aeaa4006a56b901e4006a47d0000b478000069b4000019a400001da400001db400001d78000069290000741a9505a406eaaa90016ab94000015400","000000000000000000054000006aa40001bab90001e46e4001d00b4001d0078001e40b4000ba6e40006ff90000055400000000000000000000000000000000000015400005aaa5001beaae402e541a90790001e4b40000b8b400006db400002eb400001e7800002e6900006d1e4000790b9406e401ba6b90006aaa4000055400","0000000000014000005aa40001bfbe4002e55b80069006d0078001e0078001a4078001a406d001e002e402d001ba5b90006ffe40000555000000000000000000006a940006bff9001ba56b902e4006e4690001b8780000697400002db400001db400001e7800001d6900002d2e0000791b9001b406e956e401beaf80001aa900","00000000000040000006a900001bff40006e5b9000b802d000a401d001a402d001b406d000bd5b80006fbe400006a4000000000000000000000000000000000000159400006eba4006a95ae00b9001b41a4000796900002d6800001d7400001d7400001d7400002d780000697d0000a42e4006a01b956b9006faf900006a9400","000000000000000000055000001bf900006eae4000b81b4001b4074001b40b4000b96e40006fbd00001aa40000004000000000000000000000000000000000000015540001aaaa4006a96f901a9006e42a0000a869000069640000197400001a7400001a74000019680000692d0000a41e4006a406a55a9001aaaa4000555400"],"方":["0000000000154000002fa540006eaa94006816f4007400b400a400a401a001a001e4019001f94290016aab900015af40000015000000000000000000000000000054000001fa540006eaaa5007956be5074005bd0a40002d1e0000291d0000682d000074690000a4790001a07e5001901ae94190056aaa900015af8000001500","00000000000000000155540007fff4000795b8000740780007407800074074000b95b40007fff400015a90000000000000000000000000000000000000000000155551001faaaaa92e55aabd2900156d2900001929000019690000196800001d6400001d680000197800001964000019790000297eaaa9a95aaaaff401555554","00000000000000000000000000000000000054000016a900007ebd0000796d0000641e0000681e40006eae40002fa90000155000000000000000000000000000000156500556abe06aaaa6e47e5500a4790000b464000074680000646900006829000069190000191a00001d1a40006d0a4156bd0baaaaa907ea554001540000","0000000000000000000000000000000000155400007ffd0000796d00006419000074190000796d00007ff9000015540000000000000000000000000000000000055555546aaaaaf97e5559b9780000297400001974000019640000196400001d6400001d6400001968000019680000196400056d6a55aabd2faeaaa915555550","000000000000000000000000000050000556a4001baaf9002e5569002d001d001d001d001d001d001a001e001a406e001b96be0007fea900015540000000000000005550155aabe47ebaa5b4795540647400006474000064680000646800006869000029290000191d00001d1d00001d1900556d1a5aaff91bfea55405554000"],"三角":["000000000000000000000000000000000001a4000002f4000006f900001a6900002eae40001abe4000055500000000000000000000000000000000000000000000000000000050000001a4000006f800000aa900001a590000691a4001a40a40069006900a400190190000a46e5540686eaa95b915696afd0000156500000000","0000000000000000000000000000000000000000000690000007e400001ba900001a5a400019079000295bd0007eaa90007e9540001500000000000000000000000000000064000001bd000001aa4000069690000641a80006406a000a400a901a4006a4190001a9290005bd68055aa9695aaa507ea954006a54000014000000","0000000000000000000000000000000000000000000040000001a4000002f9000006aa4000079b90000bef900007a54000054000000000000000000000000000000000000054000000b9000001aa4000029690000641a4000640690006401a50190006a0190000b8690015b964056aa5796aa5507ea950005950000000000000","00000000000000000000000000064000001f8000006f900000a5a00001f5b40002faf800015554000000000000000000000000000000000000000000000000000000000000004000000290000007e400001aa4000029690000681a0001a40640069006800a400190190001a4690000687d5555697eaaaab91555555400000000","00000000000000000001400000069000001bd0000069a00002a5a40007e5640007eab900015ab900000154000000000000000000000000000000000000000000000000000000190000007d000001aa40000a9640006a464001a40690069001900a4001902a0001a47e5000646ea95469156aa96900055abd0000056900000000"]},"phrase":"我是認真學習的 AI 寵物！"},{"name":"夥伴寵物","svg":"<svg viewBox=\"0 0 200 200\" width=\"130\" height=\"130\" role=\"img\" aria-label=\"夥伴寵物\"><defs><clipPath id=\"petclip1h\"><path d=\"M100 44 C136 44 156 70 156 102 C156 132 134 150 100 150 C66 150 44 132 44 102 C44 70 64 44 100 44Z\"/><\/clipPath><clipPath id=\"petclip1b\"><path d=\"M100 132 C124 132 140 146 140 162 C140 180 122 188 100 188 C78 188 60 180 60 162 C60 146 76 132 100 132Z\"/><\/clipPath><\/defs><ellipse cx=\"100\" cy=\"191\" rx=\"50\" ry=\"6\" fill=\"#000\" opacity=\"0.08\"/><g class=\"pet-tail\"><circle cx=\"140\" cy=\"172\" r=\"11\" fill=\"#fff0f3\" stroke=\"#7a2f40\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><\/g><g transform=\"translate(200 0) scale(-1 1)\"><\/g><path d=\"M100 132 C124 132 140 146 140 162 C140 180 122 188 100 188 C78 188 60 180 60 162 C60 146 76 132 100 132Z\" fill=\"#f7b7c3\"/><g clip-path=\"url(#petclip1b)\"><path d=\"M56 154 H72 L78 160 M144 154 H128 L122 160 M60 172 H76 M140 172 H124\" fill=\"none\" stroke=\"#e48799\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"78\" cy=\"160\" r=\"3\" fill=\"#4de8f4\" stroke=\"#7a2f40\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"122\" cy=\"160\" r=\"3\" fill=\"#4de8f4\" stroke=\"#7a2f40\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"76\" cy=\"172\" r=\"3\" fill=\"#4de8f4\" stroke=\"#7a2f40\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"124\" cy=\"172\" r=\"3\" fill=\"#4de8f4\" stroke=\"#7a2f40\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><\/g><path d=\"M100 132 C124 132 140 146 140 162 C140 180 122 188 100 188 C78 188 60 180 60 162 C60 146 76 132 100 132Z\" fill=\"none\" stroke=\"#7a2f40\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"84\" cy=\"185\" rx=\"10\" ry=\"7\" fill=\"#f7b7c3\" stroke=\"#7a2f40\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"116\" cy=\"185\" rx=\"10\" ry=\"7\" fill=\"#f7b7c3\" stroke=\"#7a2f40\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M100 44 C136 44 156 70 156 102 C156 132 134 150 100 150 C66 150 44 132 44 102 C44 70 64 44 100 44Z\" fill=\"#f7b7c3\"/><g clip-path=\"url(#petclip1h)\"><path d=\"M100 40 V56 H112 M84 44 V54 H76\" fill=\"none\" stroke=\"#e48799\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"112\" cy=\"56\" r=\"3\" fill=\"#4de8f4\" stroke=\"#7a2f40\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"76\" cy=\"54\" r=\"3\" fill=\"#4de8f4\" stroke=\"#7a2f40\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><\/g><path d=\"M100 44 C136 44 156 70 156 102 C156 132 134 150 100 150 C66 150 44 132 44 102 C44 70 64 44 100 44Z\" fill=\"none\" stroke=\"#7a2f40\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M70 52 C50 50 34 76 36 110 C38 124 52 124 54 110 C56 90 62 70 74 58Z\" fill=\"#f7b7c3\" stroke=\"#7a2f40\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M64 62 C53 66 46 84 45 104 C46 112 49 111 50 104 C52 88 56 75 66 66Z\" fill=\"#ffc2cc\"/><g transform=\"translate(200 0) scale(-1 1)\"><path d=\"M70 52 C50 50 34 76 36 110 C38 124 52 124 54 110 C56 90 62 70 74 58Z\" fill=\"#f7b7c3\" stroke=\"#7a2f40\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M64 62 C53 66 46 84 45 104 C46 112 49 111 50 104 C52 88 56 75 66 66Z\" fill=\"#ffc2cc\"/><\/g><ellipse cx=\"63\" cy=\"116\" rx=\"8\" ry=\"5\" fill=\"#ff8fa3\" opacity=\"0.45\"/><ellipse cx=\"137\" cy=\"116\" rx=\"8\" ry=\"5\" fill=\"#ff8fa3\" opacity=\"0.45\"/><path d=\"M71 101 Q79 90 87 101\" fill=\"none\" stroke=\"#2a2320\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M113 101 Q121 90 129 101\" fill=\"none\" stroke=\"#2a2320\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"100\" cy=\"112\" rx=\"4.5\" ry=\"3.5\" fill=\"#ff8fa3\"/><rect x=\"96\" y=\"119\" width=\"8\" height=\"7\" rx=\"2\" fill=\"#fff\" stroke=\"#7a2f40\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M100 115 V119 M93 121 Q100 124 100 119 Q100 124 107 121\" fill=\"none\" stroke=\"#7a2f40\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><rect x=\"61\" y=\"85\" width=\"78\" height=\"26\" rx=\"13\" fill=\"#4de8f4\" fill-opacity=\"0.35\" stroke=\"#2a2320\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M71 92 H85\" fill=\"none\" stroke=\"#fff\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" opacity=\"0.8\"/><circle cx=\"127\" cy=\"103\" r=\"2\" fill=\"#fff\"/><circle cx=\"120\" cy=\"103\" r=\"2\" fill=\"#fff\" opacity=\"0.6\"/><g class=\"pet-core pet-core-2\"><circle cx=\"100\" cy=\"168\" r=\"12\" fill=\"#fff\" opacity=\"0.5\"/><circle cx=\"100\" cy=\"168\" r=\"12\" fill=\"#4de8f4\" opacity=\"0.3\"/><path d=\"M100.0 161.0 L106.1 164.5 L106.1 171.5 L100.0 175.0 L93.9 171.5 L93.9 164.5Z\" fill=\"#4de8f4\" fill-opacity=\"1\" stroke=\"#7a2f40\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"100\" cy=\"168\" r=\"2.5\" fill=\"#fff\" opacity=\"1\"/><\/g><\/svg>","brain":{"圓":["000000000000000000169400006ffe0001e95b4006900690078002d00b4002d00b40069007901b8002eaae4001afe5000015500000000000000000000000000000014000001aa94001aaab9006a556a41a400068690000297800001eb400001eb400001db400002d78000069690001b41a505aa006eaae4001aaa50000154000","00000000000000000005a500006bfe9000b95ae401e401b8069000690780002d0740002e0740002d0680002d0690007801a956a4006faa900016a940000050000015940001affa4006e9ab901b9006e42e0000797900002db400001ea400001eb400001eb400001e7800006d6d0000781e5005a406e96b9001affa4000155400","001afe90006eaae401a901a902d0001a0780001a0b40000b0b4000070a40000b0b40001a0790002e02e0006901b956a4006ebf900016a5400000000000000000001aa50001bffe4007e95be01b9001b42e0000697900002db800001eb400001eb400001db400002d780000696d0000b81e4001f40ba55b9006fffe40005a9500","01aa500006eae4001a55b90069002e0078001a4074000b4074000b807400074078000b4069001b401e406e000baab90001bfa400005540000000000000000000005a940001bffe0006e56b801b8006e01e0001b42d0000b86d00007869000069690000692d0000691e0000781a4000b4079006e402fa6b90006ffe400016a400","00000000000000000000000000000000000050000001a900000bef40001f5b90001e02d0001e4690000beb800006fe40000054000000000000000000000000000055540001bffa4007eaab901a4006e4290000b96900006d7800002db400001e7400001e7800002d690000691e4000b81b9006e406baab90006ffa4000055400"],"方":["0000000000000000015555001aaaae401aaa5b401a40074019000740190007401a0006401a0006401a0006401a555b401babff40065655400000000000000000155565547ffffeb9b955556da400001d6400001d6400001d6400001d7400001d7400001d7400001d7400001d7400001d7400001d795556ad7efffff915555554","0000000000000000000000000000000000155400007eaa4000795b4000640b400064064001a4074001a55b4001baae400056aa00000054000000000000000000155540001faaa5541e556afd1900156d1900001d19000019290000196800001964000029640000697400006474000064795400747eaa95b4156aaae400055550","00000000000000000000000000005a400016af40002e9b40002e0690001d0190001a02d0001a9bd0000bea400006940000000000000000000000000000000000000015400005af90156baad06fe9419079500190780001a0680000a4690000b41d0000681a0000691a40002d1a40016d0a415ab906aaba5406fa940001540000","0000000000000000000000000055400001aaaa5002eaabe002d556e006900190068001d0068001d0068001d00680019007e556d006ffabd001556a40000000001a9555546fffeaa96e55556e6900001e6800001e7800001d7400001d7400001d7400001d7400001d6400001d6400001d7900001d7ea5556d6aabfff905555554","00000000000000000000000000000000000000000155500006faf40006a5b40006907400069064000290b80002eab80001aaa400005540000000000000000000055555546aaaaaa97e9555697800002964000029640000296800001964000019680000196900001969000019690000196904056e6e6aaabd2faaaa6515555400"],"三角":["00000000000000000000000000150000006e4000006a800001a690000191a4000190690006901b4006956f801baaaa401a9554000540000000000000000000000000000000150000006e4000006e800001a6a0000191a4000290690006801a40064006901a4001a41a0000bd290156bd7d5aaaa57eaa95506955000000000000","0000000000000000000000000000000000050000001a4000001f9000002aa4000069690000696e4000babe4000be950000550000000000000000000000000000001000000068000000bd000001aa4000019690000291a4000680690006401a900a4005a41a0000a8190015bd1915aaa96e6aa9547fa550006950000010000000","00000000000000000000000000000000000050000001f4000006f90000069a40001baf40001bea400005550000000000000000000000000000000000000000000000000000010000000a4000001f9000002aa4000069690001a41a0001900a4002900690064001a41a4000681a00556d6e56aab97eaaaa941555140000000000","000000000000000000000000000000000000000000000000000050000001a4000001f9000006ae400007af400007e940000150000000000000000000000000000000000000150000006e0000007e400000aa900001a1a4000690690006401a000a400a901a4006a4190001b969005abd7e55aaa57eaa95506555400000000000","000000000000000000000000000000000000000000150000002e0000006f400001aa900001fae00001fbe0000155500000000000000000000000000000000000000000000000000000064000001b9000001aa400006968000064190001a01a00069006400a400690190001a0690155b46a56aab96aaaaaa90555154000000000"]},"phrase":"今天也是會查證的小幫手～"}]};
+/* === END:DATA === */
+
+/* === ENGINE === */
+// AI 寵物的大腦：把畫轉成 16×16 的格子，跟腦袋裡的範例比，找最像的 3 張投票（k 近鄰）。
+// 跟遊戲本體 engine/ 的算法一樣，請不要修改這個區塊。
+var GRID = 16, SIZE = 320, LINE = 14, K = 3, SIZE_WEIGHT = 0.8;
+
+function rasterize(strokes) {
+  var SUB = 5, FINE = GRID * SUB, fine = new Uint8Array(FINE * FINE), cell = SIZE / FINE, r2 = (LINE / 2) * (LINE / 2);
+  strokes.forEach(function (pts) {
+    for (var i = 0; i < Math.max(1, pts.length - 1); i++) {
+      var a = pts[i], b = pts[Math.min(i + 1, pts.length - 1)];
+      var x0 = Math.max(0, Math.floor((Math.min(a.x, b.x) - LINE / 2) / cell)), x1 = Math.min(FINE - 1, Math.floor((Math.max(a.x, b.x) + LINE / 2) / cell));
+      var y0 = Math.max(0, Math.floor((Math.min(a.y, b.y) - LINE / 2) / cell)), y1 = Math.min(FINE - 1, Math.floor((Math.max(a.y, b.y) + LINE / 2) / cell));
+      for (var fy = y0; fy <= y1; fy++) for (var fx = x0; fx <= x1; fx++) {
+        if (!fine[fy * FINE + fx] && dist2((fx + 0.5) * cell, (fy + 0.5) * cell, a, b) <= r2) fine[fy * FINE + fx] = 1;
+      }
+    }
+  });
+  var grid = new Float32Array(GRID * GRID);
+  for (var gy = 0; gy < GRID; gy++) for (var gx = 0; gx < GRID; gx++) {
+    var sum = 0;
+    for (var sy = 0; sy < SUB; sy++) for (var sx = 0; sx < SUB; sx++) sum += fine[(gy * SUB + sy) * FINE + gx * SUB + sx];
+    grid[gy * GRID + gx] = sum / (SUB * SUB);
+  }
+  // 模糊一格，再把最亮的格子拉到 1
+  var out = new Float32Array(GRID * GRID), k = [1, 2, 1], max = 0;
+  for (var y = 0; y < GRID; y++) for (var x = 0; x < GRID; x++) {
+    var s = 0;
+    for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+      var yy = y + dy, xx = x + dx;
+      if (yy >= 0 && yy < GRID && xx >= 0 && xx < GRID) s += grid[yy * GRID + xx] * k[dy + 1] * k[dx + 1];
+    }
+    out[y * GRID + x] = s / 16;
+    if (out[y * GRID + x] > max) max = out[y * GRID + x];
+  }
+  if (max > 0) for (var j = 0; j < out.length; j++) out[j] /= max;
+  return out;
+}
+
+function dist2(px, py, a, b) {
+  var dx = b.x - a.x, dy = b.y - a.y, len2 = dx * dx + dy * dy;
+  var t = len2 === 0 ? 0 : ((px - a.x) * dx + (py - a.y) * dy) / len2;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  var ex = a.x + t * dx - px, ey = a.y + t * dy - py;
+  return ex * ex + ey * ey;
+}
+
+// 形狀格：先把畫裁成正方形放大，不管畫多大、畫在哪都看得出形狀
+function shapeRaster(strokes) {
+  var pts = [].concat.apply([], strokes);
+  if (!pts.length) return new Float32Array(GRID * GRID);
+  var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  pts.forEach(function (p) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); });
+  var side = Math.max(x1 - x0, y1 - y0, SIZE / GRID) * 1.16, k = SIZE / side, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  return rasterize(strokes.map(function (s) { return s.map(function (p) { return { x: (p.x - cx) * k + SIZE / 2, y: (p.y - cy) * k + SIZE / 2 }; }); }));
+}
+
+function features(strokes) { return { grid: rasterize(strokes), shape: shapeRaster(strokes) }; }
+
+function isBlank(grid) { for (var i = 0; i < grid.length; i++) if (grid[i] >= 0.2) return false; return true; }
+
+function vec(s) {
+  var v = new Float32Array(GRID * GRID * 2);
+  v.set(s.shape, 0);
+  for (var i = 0; i < s.grid.length; i++) v[GRID * GRID + i] = s.grid[i] * SIZE_WEIGHT;
+  return v;
+}
+
+// 猜：回傳 { label, confidence（0–1 有多確定）, similarity（跟最像那張像幾成） }
+function classify(query, samples) {
+  if (!samples.length) return { label: null, confidence: 0, similarity: 0 };
+  var qv = vec(query);
+  var scored = samples.map(function (s) {
+    var v = s.v || (s.v = vec(s)), d = 0;
+    for (var i = 0; i < v.length; i++) d += (qv[i] - v[i]) * (qv[i] - v[i]);
+    return { label: s.label, distance: Math.sqrt(d) };
+  }).sort(function (a, b) { return a.distance - b.distance; });
+  var top = scored.slice(0, K), votes = {}, total = 0;
+  top.forEach(function (n) { votes[n.label] = (votes[n.label] || 0) + 1 / (n.distance + 1e-6); });
+  var label = top[0].label;
+  Object.keys(votes).forEach(function (l) { total += votes[l]; if (votes[l] > votes[label] + 1e-9) label = l; });
+  var zero = Math.sqrt(GRID * GRID * (1 + SIZE_WEIGHT * SIZE_WEIGHT));
+  return { label: label, confidence: votes[label] / total, similarity: Math.max(0, 1 - top[0].distance / zero) };
+}
+
+// 腦袋：每張範例是 256 個十六進位字（原圖格 128＋形狀格 128），每格 2-bit
+function decodeBrain(brain) {
+  var out = [];
+  Object.keys(brain || {}).forEach(function (label) {
+    (brain[label] || []).forEach(function (hex) {
+      if (!/^[0-9a-f]{256}$/.test(hex)) return;
+      var g = new Float32Array(GRID * GRID), s = new Float32Array(GRID * GRID);
+      for (var i = 0; i < 128; i++) {
+        var a = parseInt(hex[i], 16), b = parseInt(hex[128 + i], 16);
+        g[i * 2] = (a >> 2) / 3; g[i * 2 + 1] = (a & 3) / 3;
+        s[i * 2] = (b >> 2) / 3; s[i * 2 + 1] = (b & 3) / 3;
+      }
+      out.push({ label: label, grid: g, shape: s });
+    });
+  });
+  return out;
+}
+
+// 沒有腦袋時（精簡版）用的假資料：電腦自己畫的標準圓、方、三角各 5 張
+function demoSamples() {
+  var out = [], spots = [[160, 160, 120], [160, 160, 80], [110, 120, 70], [210, 200, 90], [160, 150, 150]];
+  ['圓', '方', '三角'].forEach(function (label) {
+    spots.forEach(function (p) {
+      var f = features([shapePoints(label, p[0], p[1], p[2])]);
+      out.push({ label: label, grid: f.grid, shape: f.shape });
+    });
+  });
+  return out;
+}
+
+function shapePoints(label, cx, cy, size) {
+  var r = size / 2, pts = [];
+  if (label === '圓') for (var i = 0; i <= 32; i++) pts.push({ x: cx + r * Math.cos(i * Math.PI / 16), y: cy + r * Math.sin(i * Math.PI / 16) });
+  var corners = label === '方' ? [[-1, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]] : label === '三角' ? [[0, -1], [1, 0.8], [-1, 0.8], [0, -1]] : [];
+  for (var c = 1; c < corners.length; c++) for (var t = 0; t < 8; t++) {
+    var a = corners[c - 1], b = corners[c];
+    pts.push({ x: cx + r * (a[0] + (b[0] - a[0]) * t / 8), y: cy + r * (a[1] + (b[1] - a[1]) * t / 8) });
+  }
+  return pts;
+}
+/* === END:ENGINE === */
+
+window.PetSkills = {};
+
+/* === SKILL:score === */
+// 計分：AI 猜對加 10 分，畫面上方顯示總分
+window.PetSkills.score = {
+  init: function (ctx) {
+    var chip = ctx.ui.chip('分數');
+    ctx.onStart(function () { ctx.state.score = 0; chip.set(0); });
+    ctx.onGuess(function (r) { if (r.correct) { ctx.state.score += 10; chip.set(ctx.state.score); } });
+    ctx.onEnd(function () { ctx.state.notes.push('得分：' + ctx.state.score + ' 分'); });
+  }
+};
+/* === END:score === */
+
+/* === SKILL:timer === */
+// 計時：每題 30 秒倒數，時間到就結束並顯示得分
+window.PetSkills.timer = {
+  init: function (ctx) {
+    var chip = ctx.ui.chip('時間'), left = 0, id = null;
+    function stop() { clearInterval(id); id = null; }
+    ctx.onRound(function () {
+      stop();
+      left = ctx.state.roundTime || 30;
+      chip.set(left + ' 秒');
+      id = setInterval(function () {
+        left--;
+        chip.set(left + ' 秒');
+        if (left <= 0) { stop(); ctx.state.notes.push('時間到了！'); ctx.end(); }
+      }, 1000);
+    });
+    ctx.onGuess(stop);
+    ctx.onEnd(stop);
+  }
+};
+/* === END:timer === */
+
+/* === SKILL:easter === */
+// 彩蛋：連續猜對 3 次，出現隱藏的特別畫面
+window.PetSkills.easter = {
+  init: function (ctx) {
+    var shown = false;
+    ctx.onStart(function () { shown = false; });
+    ctx.onGuess(function () {
+      if (shown || ctx.state.streak < 3) return;
+      shown = true;
+      ctx.ui.popup('隱藏關卡出現了！', '連續猜對 3 次，\n你和 AI 寵物超有默契！', '繼續玩', null, 'holo');
+    });
+  }
+};
+/* === END:easter === */
+
+/* === SKILL:feedback === */
+// 回饋話語：猜對說鼓勵的話，猜錯說提示的話（每句不超過 12 個字）
+window.PetSkills.feedback = {
+  init: function (ctx) {
+    var cheers = ['太棒了！', '畫得真標準！', '我認出來了！'];
+    var hints = { '圓': '圓要畫得圓滾滾喔', '方': '方形的四個角要清楚', '三角': '三角形有三個尖角', '叉叉': '兩條斜線要交叉' };
+    ctx.onGuess(function (r) {
+      ctx.ui.pets.forEach(function (p, i) {
+        var text = r.correct ? cheers[Math.floor(Math.random() * cheers.length)] : (hints[r.target] || '再試一次！');
+        ctx.ui.say(i, text);
+      });
+    });
+  }
+};
+/* === END:feedback === */
+
+/* === SKILL:sound === */
+// 音效：猜對、猜錯、結束各一種，用瀏覽器內建的聲音（Web Audio），不載入外部檔案
+window.PetSkills.sound = {
+  init: function (ctx) {
+    var ac = null;
+    function play(notes) {
+      try {
+        ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+        if (ac.resume) ac.resume();
+        notes.forEach(function (f, i) {
+          var o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + i * 0.12;
+          o.frequency.value = f;
+          o.connect(g); g.connect(ac.destination);
+          g.gain.setValueAtTime(0.2, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+          o.start(t); o.stop(t + 0.22);
+        });
+      } catch (e) { /* 這台裝置不能播聲音就算了 */ }
+    }
+    ctx.onGuess(function (r) { play(r.correct ? [660, 880] : [300, 220]); });
+    ctx.onEnd(function () { play([523, 659, 784, 1047]); });
+  }
+};
+/* === END:sound === */
+
+/* === SKILL:anim === */
+// 角色動畫：猜對跳一下、猜錯搖一搖，每題開始時說口頭禪
+window.PetSkills.anim = {
+  init: function (ctx) {
+    function move(el, name) {
+      el.classList.remove('jump', 'shake');
+      void el.offsetWidth; // 讓動畫可以重播
+      el.classList.add(name);
+    }
+    ctx.onRound(function () {
+      ctx.ui.pets.forEach(function (p, i) { if (p.phrase) ctx.ui.say(i, p.phrase); });
+    });
+    ctx.onGuess(function (r) {
+      ctx.ui.pets.forEach(function (p) { move(p.art, r.correct ? 'jump' : 'shake'); });
+    });
+  }
+};
+/* === END:anim === */
+
+/* === SKILL:levels === */
+// 關卡：3 關，每關猜對 2 次就過關；過關後題目種類變多、時間變短
+window.PetSkills.levels = {
+  init: function (ctx) {
+    var chip = ctx.ui.chip('關卡'), all = [], level = 1, hits = 0;
+    function apply() {
+      ctx.state.classes = all.slice(0, Math.min(all.length, level + 1));
+      ctx.state.roundTime = 35 - level * 5; // 30、25、20 秒（有計時道具才用得到）
+      chip.set('第 ' + level + ' 關');
+    }
+    ctx.onStart(function () {
+      all = ctx.state.classes.slice();
+      level = 1; hits = 0;
+      ctx.state.total = 9;
+      apply();
+    });
+    ctx.onGuess(function (r) {
+      if (!r.correct || level >= 3) return;
+      hits++;
+      if (hits >= 2) { level++; hits = 0; apply(); ctx.ui.toast('過關！進入第 ' + level + ' 關'); }
+    });
+  }
+};
+/* === END:levels === */
+
+/* === SKILL:highscore === */
+// 最高分：記錄這次打開頁面以來的最高分（重新整理就會歸零）
+window.PetSkills.highscore = {
+  init: function (ctx) {
+    var chip = ctx.ui.chip('最高分'), best = 0;
+    chip.set(0);
+    ctx.onEnd(function () {
+      var now = typeof ctx.state.score === 'number' ? ctx.state.score : ctx.state.correct;
+      if (now > best) { best = now; chip.set(best); ctx.state.notes.push('新的最高分！'); }
+    });
+  }
+};
+/* === END:highscore === */
+
+/* === SKILL:adapt === */
+// 難度自動調整：連續猜對 3 次變難（AI 要更有把握才算），連續猜錯 2 次變容易
+window.PetSkills.adapt = {
+  init: function (ctx) {
+    var names = ['簡單', '普通', '困難'], chip = ctx.ui.chip('難度'), win = 0, lose = 0;
+    function show() { chip.set(names[ctx.state.strict]); }
+    ctx.onStart(function () { win = 0; lose = 0; ctx.state.strict = 0; show(); });
+    ctx.onGuess(function (r) {
+      if (r.correct) { win++; lose = 0; } else { lose++; win = 0; }
+      if (win >= 3 && ctx.state.strict < 2) { ctx.state.strict++; win = 0; ctx.ui.toast('變難了！'); }
+      if (lose >= 2 && ctx.state.strict > 0) { ctx.state.strict--; lose = 0; ctx.ui.toast('變簡單一點'); }
+      show();
+    });
+  }
+};
+/* === END:adapt === */
+
+/* === GAME === */
+// 遊戲流程：開始 → 每題抽題目 → 畫 → AI 猜 → 下一題 → 結束。作品道具用 ctx 掛上自己的功能。
+(function () {
+  var ROUNDS = 5;                 // 一局幾題
+  var STRICT = [0, 0.6, 0.85];    // 難度：AI 至少要多確定才算猜對
+  var ORDER = ['圓', '方', '三角', '叉叉'];
+  var $ = function (id) { return document.getElementById(id); };
+  var pad = $('pad'), pen = pad.getContext('2d'), strokes = [], drawing = null;
+  var hooks = { start: [], round: [], guess: [], end: [] };
+  var state = { round: 0, total: ROUNDS, correct: 0, streak: 0, classes: [], strict: 0, target: null, playing: false, notes: [] };
+
+  var pets = PET_DATA.pets.slice(0, 2).map(function (p, i) {
+    var card = el('div', 'pet-card'), face = el('div', 'pet-face'), art = el('div', 'pet-art');
+    var name = el('p', 'pet-name', p.name || 'AI 寵物'), bubble = el('div', 'bubble'), say = el('p', 'say');
+    art.innerHTML = p.svg || ''; // 寵物外型是遊戲產生的 SVG，不是使用者輸入
+    face.append(art, name, bubble, say);
+    card.append(face);
+    $('pets').append(card);
+    var samples = p.brain ? decodeBrain(p.brain) : [];
+    return { card: card, art: art, bubble: bubble, sayEl: say, phrase: p.phrase || '', samples: samples.length ? samples : demoSamples() };
+  });
+  var allClasses = ORDER.filter(function (l) { return pets.some(function (p) { return p.samples.some(function (s) { return s.label === l; }); }); });
+
+  function el(tag, cls, text) { var e = document.createElement(tag); e.className = cls; if (text) e.textContent = text; return e; }
+  function emit(name, arg) { hooks[name].forEach(function (fn) { try { fn(arg); } catch (e) { console.error(e); } }); }
+
+  var ui = {
+    pets: pets,
+    chip: function (label) {
+      var c = el('span', 'chip'), small = el('small', '', label), b = el('b', '', '');
+      c.append(small, b);
+      $('chips').append(c);
+      return { el: c, set: function (v) { b.textContent = v; } };
+    },
+    say: function (i, text) { if (pets[i]) pets[i].sayEl.textContent = text; },
+    toast: function (text) {
+      var t = $('toast');
+      t.textContent = text; t.hidden = false;
+      clearTimeout(ui.toastId);
+      ui.toastId = setTimeout(function () { t.hidden = true; }, 1600);
+    },
+    popup: function (title, text, button, onClose, kind) {
+      $('sheet-title').textContent = title;
+      $('sheet-text').textContent = text;
+      $('sheet-btn').textContent = button;
+      $('sheet').className = 'sheet' + (kind ? ' ' + kind : '');
+      $('overlay').hidden = false;
+      $('sheet-btn').onclick = function () { $('overlay').hidden = true; if (onClose) onClose(); };
+    }
+  };
+
+  var ctx = {
+    state: state, ui: ui, end: end,
+    onStart: function (fn) { hooks.start.push(fn); },
+    onRound: function (fn) { hooks.round.push(fn); },
+    onGuess: function (fn) { hooks.guess.push(fn); },
+    onEnd: function (fn) { hooks.end.push(fn); }
+  };
+  Object.keys(window.PetSkills).forEach(function (id) {
+    try { window.PetSkills[id].init(ctx); } catch (e) { console.error('作品道具 ' + id + ' 有問題', e); }
+  });
+
+  function start() {
+    state.round = 0; state.correct = 0; state.streak = 0; state.strict = 0;
+    state.total = ROUNDS; state.classes = allClasses.slice(); state.notes = []; state.playing = true;
+    emit('start', state);
+    nextRound();
+  }
+
+  function nextRound() {
+    if (state.round >= state.total) return end();
+    state.round++;
+    var choices = state.classes.filter(function (l) { return l !== state.target; });
+    if (!choices.length) choices = state.classes;
+    state.target = choices[Math.floor(Math.random() * choices.length)];
+    $('target').textContent = state.target;
+    $('result').textContent = '第 ' + state.round + '／' + state.total + ' 題，畫好按「讓 AI 猜」';
+    $('result').className = 'result';
+    pets.forEach(function (p) { p.bubble.textContent = '我在看你畫…'; p.sayEl.textContent = ''; });
+    clearPad();
+    $('go').hidden = false; $('next').hidden = true;
+    emit('round', state);
+  }
+
+  function guess(lines) {
+    if (!state.playing || $('go').hidden) return null;
+    var q = features(lines);
+    if (isBlank(q.grid)) { $('result').textContent = '先畫一個「' + state.target + '」喔'; return null; }
+    var guesses = pets.map(function (p, i) {
+      var g = classify(q, p.samples.filter(function (s) { return state.classes.indexOf(s.label) >= 0; }));
+      p.bubble.textContent = '';
+      p.bubble.append(document.createTextNode('我猜是「' + g.label + '」'), el('small', '', '跟範例像 ' + Math.round(g.similarity * 100) + '%'));
+      return { pet: i, label: g.label, confidence: g.confidence, similarity: g.similarity };
+    });
+    var correct = guesses.some(function (g) { return g.label === state.target && g.confidence >= STRICT[state.strict]; });
+    if (correct) { state.correct++; state.streak++; } else state.streak = 0;
+    $('result').textContent = correct ? '✓ 認出來了！' : '✗ 沒認出來，畫標準一點再試試';
+    $('result').className = 'result ' + (correct ? 'ok' : 'no');
+    $('go').hidden = true; $('next').hidden = false;
+    $('next').textContent = state.round >= state.total ? '看結果' : '下一題';
+    var result = { target: state.target, correct: correct, guesses: guesses };
+    emit('guess', result);
+    return result;
+  }
+
+  function end() {
+    if (!state.playing) return;
+    state.playing = false;
+    emit('end', state);
+    var text = ['答對 ' + state.correct + '／' + state.round + ' 題'].concat(state.notes).join('\n');
+    ui.popup('這局結束', text, '再玩一次', start);
+  }
+
+  // ── 手指畫圖：座標一律換算成 320×320 ──
+  function point(e) {
+    var r = pad.getBoundingClientRect();
+    return { x: Math.min(SIZE, Math.max(0, (e.clientX - r.left) / r.width * SIZE)), y: Math.min(SIZE, Math.max(0, (e.clientY - r.top) / r.height * SIZE)) };
+  }
+  function line(a, b) {
+    var k = pad.width / SIZE;
+    pen.lineWidth = LINE * k; pen.lineCap = 'round'; pen.lineJoin = 'round'; pen.strokeStyle = '#1e2140';
+    pen.beginPath(); pen.moveTo(a.x * k, a.y * k); pen.lineTo(b.x * k, b.y * k); pen.stroke();
+  }
+  function clearPad() { strokes = []; drawing = null; pen.clearRect(0, 0, pad.width, pad.height); }
+  pad.addEventListener('pointerdown', function (e) {
+    if (drawing || $('go').hidden) return;
+    e.preventDefault();
+    var p = point(e);
+    drawing = { id: e.pointerId, pts: [p] };
+    strokes.push(drawing.pts);
+    try { pad.setPointerCapture(e.pointerId); } catch (err) { /* 忽略 */ }
+    line(p, p);
+  });
+  pad.addEventListener('pointermove', function (e) {
+    if (!drawing || drawing.id !== e.pointerId) return;
+    e.preventDefault();
+    var p = point(e), last = drawing.pts[drawing.pts.length - 1];
+    if (Math.hypot(p.x - last.x, p.y - last.y) < 1.5) return;
+    drawing.pts.push(p);
+    line(last, p);
+  });
+  function lift(e) { if (drawing && drawing.id === e.pointerId) drawing = null; }
+  pad.addEventListener('pointerup', lift);
+  pad.addEventListener('pointercancel', lift);
+  pad.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
+  pad.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+
+  $('clear').onclick = function () { if (!$('go').hidden) clearPad(); };
+  $('go').onclick = function () { guess(strokes); };
+  $('next').onclick = nextRound;
+
+  window.Game = { state: state, start: start, guess: guess, next: nextRound, end: end, pets: pets };
+  start();
+})();
+/* === END:GAME === */
+</script>
+</body>
+</html>
