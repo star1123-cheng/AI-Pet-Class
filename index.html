@@ -109,6 +109,65 @@
   .hint { margin-top: 10px; color: var(--muted); }
   .sync { color: var(--muted); text-align: center; min-height: 1.5em; }
   .banner { background: #fde2df; color: var(--warn); border-radius: 12px; padding: 10px 16px; font-weight: 600; text-align: center; }
+  /* 第 3 堂 */
+  .lesson-btn { width: min(420px, 90vw); }
+  .talk-screen { justify-content: flex-start; padding-left: 16px; padding-right: 16px; }
+  .talk-body { width: 100%; max-width: 1000px; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; align-items: center; gap: 14px; padding-bottom: 12px; }
+  .talk-title { font-size: 26px; margin: 4px 0 0; text-align: center; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; width: 100%; }
+  .card { display: grid; grid-template-columns: 56px 1fr; grid-template-rows: auto auto; column-gap: 12px; text-align: left; padding: 14px 16px; min-height: 96px; align-items: center; }
+  .card-icon { grid-row: 1 / span 2; font-size: 40px; text-align: center; }
+  .card-name { font-weight: 700; }
+  .card-note { font-size: 18px; color: var(--muted); }
+  .card-done { grid-column: 2; color: var(--good); font-size: 18px; font-weight: 700; }
+  .card.done { border-color: var(--good); }
+  .split { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start; width: 100%; }
+  .col { display: flex; flex-direction: column; gap: 12px; flex: 1 1 340px; max-width: 480px; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .talker { display: flex; align-items: center; gap: 12px; }
+  .talker.big { flex: 1 1 340px; max-width: 480px; flex-direction: column; }
+  .pet.small { width: min(160px, 30vw, 22dvh); flex: none; }
+  .talker.big .pet.small { width: min(240px, 50vw, 30dvh); }
+  .bubble { position: relative; background: #fff; border: 2px solid var(--line); border-radius: 18px; padding: 12px 16px; font-size: 24px; font-weight: 700; min-height: 1.5em; flex: 1; }
+  .talker.big .bubble { font-size: 26px; text-align: center; width: 100%; }
+  .temp { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 16px; }
+  .temp input { width: 100%; height: 44px; accent-color: var(--accent); }
+  .temp-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 18px; }
+  .words { display: flex; flex-direction: column; gap: 8px; }
+  .word { display: grid; grid-template-columns: 4.5em 1fr 3.2em; grid-template-rows: auto auto; column-gap: 10px; align-items: center; padding: 6px 14px; text-align: left; }
+  .word.on, button.on { border-color: var(--accent); background: #e6efff; }
+  .w-text { font-weight: 700; }
+  .w-pct { font-size: 18px; color: var(--muted); text-align: right; }
+  .w-tally { grid-column: 1 / -1; font-size: 18px; color: var(--accent); min-height: 0; }
+  .w-tally:empty { display: none; }
+  .bar { height: 14px; background: var(--bg); border-radius: 7px; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--accent); transition: width 0.3s; }
+  button.yes, button.no { flex: 1; min-height: 80px; font-size: 28px; font-weight: 700; }
+  button.yes { border-color: var(--good); }
+  button.no { border-color: var(--warn); }
+  .shelf-btn { width: 100%; }
+  .review { list-style: none; margin: 0; padding: 0; width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 8px; }
+  .review li { background: var(--panel); border-left: 6px solid var(--good); border-radius: 10px; padding: 8px 14px; }
+  .review li.bad { border-left-color: var(--warn); }
+  .ask { background: var(--note); border-radius: 12px; padding: 10px 16px; font-weight: 600; }
+  .good { color: var(--good); font-weight: 700; }
+  .chance { font-weight: 700; }
+  .slot { display: flex; flex-direction: column; gap: 6px; }
+  .reasons { display: flex; flex-direction: column; gap: 8px; }
+  .reason { text-align: left; }
+  .question { font-size: 24px; font-weight: 700; text-align: center; max-width: 760px; }
+  .options { display: flex; flex-direction: column; gap: 10px; width: min(560px, 100%); }
+  .option { text-align: left; }
+  .option.right { border-color: var(--good); background: #e3f4ea; opacity: 1; }
+  .option.wrong { border-color: var(--warn); background: #fde2df; opacity: 1; }
+  .talk-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+  .sheet { background: var(--panel); border-radius: 20px; padding: 20px 24px; width: min(640px, 100%); max-height: 90dvh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; }
+  .sheet h2 { margin: 0; }
+  .big-emoji { font-size: 56px; line-height: 1; }
+  .pop-in { animation: pop 0.6s ease-out both; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .facts { display: flex; flex-direction: column; gap: 8px; width: 100%; text-align: left; }
+  .fact { background: var(--bg); border-radius: 10px; padding: 10px 14px; }
 </style>
 </head>
 <body>
@@ -141,7 +200,13 @@
         <p class="hint">看牠胸前的 AI 核心：準確率越高，就越亮。</p>
       </section>
     </div>
+    <button id="lesson3Btn" class="primary lesson-btn" hidden>第 3 堂：AI 怎麼說話 ▶</button>
     <p id="sync" class="sync" aria-live="polite"></p>
+  </main>
+
+  <main id="talk" class="screen talk-screen" hidden>
+    <div class="talk-body"></div>
+    <div class="talk-overlay" hidden></div>
   </main>
 <script type="module" src="app/main.js"></script>
 </body>

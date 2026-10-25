@@ -5,6 +5,7 @@ import { appearanceOf } from '../pet/appearance.js';
 import { mountPet } from '../pet/render.js';
 import { createStore, newPet, classesFor } from './store.js';
 import { createApi } from './api.js';
+import { createLesson3 } from './lesson3.js';
 
 const FLUSH_EVERY_MS = 20000;
 
@@ -13,6 +14,9 @@ const store = createStore();
 const api = createApi({ url: GAS_URL, store, onRejected });
 
 let pet = null;
+
+// 第 3 堂（P4）。堂次由老師在試算表 config 設定，P3 會再做完整的堂次切換
+const lesson3 = createLesson3({ root: $('talk'), store, api, getPet: () => pet, onExit: showHome });
 
 const ERRORS = {
   empty: () => '請輸入序號',
@@ -88,6 +92,7 @@ function onRejected(item, error) {
 // ── 寵物畫面 ──
 function showHome() {
   $('adopt').hidden = true;
+  $('talk').hidden = true;
   $('home').hidden = false;
   renderHome();
 }
@@ -101,8 +106,15 @@ function renderHome() {
   $('sTrain').textContent = `${s.trainCount} 次`;
   $('sAcc').textContent = s.accuracy === null || s.accuracy === undefined ? '還沒考過' : Math.round(s.accuracy * 100) + '%';
   $('rejected').hidden = !pet.rejected;
+  $('lesson3Btn').hidden = pet.lesson < 3;
   showSync();
 }
+
+$('lesson3Btn').onclick = () => {
+  $('home').hidden = true;
+  $('talk').hidden = false;
+  lesson3.open();
+};
 
 function showAdopt() {
   $('home').hidden = true;
