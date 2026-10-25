@@ -110,3 +110,27 @@ export function fakeFetch(gas, net = { online: true, calls: 0 }) {
   };
   return { fn, net };
 }
+
+// 教師看板專案（gas-dashboard/）：跟學生端共用同一份假試算表，但鎖是自己的（不同專案）
+export function loadDashboard(gas) {
+  const lock = { held: false };
+  const ctx = {
+    SpreadsheetApp: { getActiveSpreadsheet: () => gas.ss },
+    LockService: {
+      getScriptLock: () => ({
+        tryLock: () => (lock.held ? false : (lock.held = true)),
+        releaseLock: () => (lock.held = false),
+      }),
+    },
+    Math,
+    JSON,
+    Date,
+  };
+  vm.createContext(ctx);
+  for (const f of ['Shared.gs', 'Dashboard.gs']) {
+    vm.runInContext(readFileSync(new URL('../gas-dashboard/' + f, import.meta.url), 'utf8'), ctx, { filename: f });
+  }
+  // vm 裡建立的物件原型不同，轉一次 JSON 再比對（也順便確認 google.script.run 傳得過去）
+  const call = (name, ...args) => JSON.parse(JSON.stringify(ctx[name](...args)));
+  return { ctx, call, lock };
+}

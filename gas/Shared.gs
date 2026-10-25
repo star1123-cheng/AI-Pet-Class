@@ -1,5 +1,6 @@
 // 序號與外型：跟 pet/serial.js、pet/appearance.js 是同一套規則（GAS 不能 import，只好複製一份）。
 // 改這裡也要改前端那兩個檔案；test/gas.test.js 會比對兩邊結果是否一致。
+// 教師看板專案用的 gas-dashboard/Shared.gs 必須跟這個檔案一模一樣（test/dashboard.test.js 會檢查）。
 
 var SERIAL_CHARSET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 var SERIAL_LENGTH = 6;

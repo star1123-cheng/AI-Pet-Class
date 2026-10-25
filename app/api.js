@@ -128,6 +128,11 @@ export function createApi({ url, store, fetchFn = globalThis.fetch, timeoutMs = 
       store.enqueue('submitQuiz', { serial, form, answers });
       return flush();
     },
+    // Canvas 任務做完按「我完成了」：只送任務代碼，老師在看板確認
+    reportTask(serial, taskId) {
+      store.enqueue('reportTask', { serial, taskId });
+      return flush();
+    },
     // 合併夥伴：要有網路；沒網路回傳 null
     async getBrain(serial) {
       try {

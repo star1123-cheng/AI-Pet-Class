@@ -89,7 +89,7 @@ export const GAS_URL = 'https://script.google.com/macros/s/……/exec';
 ### 這個專案怎麼降低風險
 
 1. **權限只到這份試算表**：`appsscript.json` 只宣告 `spreadsheets.currentonly`，程式碰不到你的雲端硬碟、Gmail 或其他試算表。
-2. **網址上沒有管理功能**：發序號、清空資料都只在試算表選單，`doPost` 只接受 `claimPet`、`getPet`、`savePet`、`logEvent`、`batch`。
+2. **網址上沒有管理功能**：發序號、清空資料都只在試算表選單；確認任務、重設能量、切換堂次在另一個只有你能開的教師看板專案（第 10 節）。`doPost` 只接受學生端動作：`claimPet`、`getPet`、`savePet`、`logEvent`、`logPrompt`、`getBrain`、`saveSamples`、`submitQuiz`、`reportTask`、`batch`。
 3. **每次寫入都檢查**：序號要格式正確、檢查碼正確、而且在 `serials` 分頁裡；欄位只收數字與選項代碼，不收自由文字；請求最多 20,000 字元。
 4. **外型由伺服器決定**：前端送來的外型一律不採用。
 5. **不印出內容**：程式不用 Logger 或 console 記錄請求。
@@ -137,3 +137,58 @@ node tools/stress-30.mjs "你的 GAS 網址" serials.csv
 
 - 試算表存在 Google（國外服務），雖然只有序號，仍屬資料委外處理；必要時先向學校資安窗口報備。
 - 保存期限與刪除時機請填進 `docs/05` 第 7 節。建議課程結束（第 6 堂後）匯出需要的統計，再刪除整份試算表。
+
+## 10. 教師看板（P7，第二個 Apps Script 專案）
+
+看板放在 `gas-dashboard/`，是**另一個**綁在同一份試算表的 Apps Script 專案。為什麼要分開：學生端那支是「所有人」都能呼叫的網址，管理功能放在裡面就等於公開；看板專案部署成「只有我自己」，別人打開網址會被 Google 直接擋下。
+
+### 部署組合
+
+| 欄位 | 設定 | 原因 |
+|------|------|------|
+| 執行身分（Execute as） | **我** | 讀寫你的試算表 |
+| 誰可以存取（Who has access） | **只有我自己（Only myself）** | 其他帳號（含學生、其他老師）打開網址會被拒絕 |
+
+- 權限只有 `spreadsheets.currentonly`（只能動這一份試算表），沒有 Drive、Gmail。
+- 這個組合沒有「權限升級」風險：能打開的只有你自己。
+- 展示機要用**你的帳號**登入瀏覽器才打得開；不要在學生能操作的電腦上保持登入。
+
+### 第一次建立（用 clasp）
+
+1. 從專案資料夾的 `.clasp.json` 找到 `parentId`（試算表編號）。
+2. **在 `gas-dashboard` 資料夾裡**執行（在專案根目錄執行會蓋掉學生端的 `.clasp.json`）：
+
+```bash
+cd gas-dashboard
+```
+
+```bash
+clasp create-script --type sheets --parentId 你的試算表編號 --title "AI 寵物 教師看板" --rootDir .
+```
+
+3. 執行 `git status`：如果 `gas-dashboard/appsscript.json` 被改掉，用下面指令還原成 repo 版本（clasp 建立專案時可能會下載預設的資訊清單）：
+
+```bash
+git checkout -- appsscript.json
+```
+
+4. 推送程式（`gas-dashboard/.clasp.json` 已被 `.gitignore` 排除，不會進 Git）：
+
+```bash
+clasp push --force
+```
+
+5. 在 Apps Script 編輯器（`clasp open-script`）選函式 `getDashboard` → 執行一次，完成授權。授權畫面應該只有「查看及管理這份試算表」；出現雲端硬碟全部檔案的權限就**先不要允許**，回報給 Claude Code。
+6. 「部署」→「新增部署作業」→ 網頁應用程式，執行身分「我」、存取「只有我自己」→ 部署，把網址存進瀏覽器書籤（**不要**填進 `config.js`，也不要貼到學生看得到的地方）。
+7. 展示機：同一個網址後面加 `?view=display`，看板上方也有「開啟展示機畫面」按鈕。
+
+### 驗收
+
+- 用**另一個 Google 帳號**（或無痕視窗未登入）打開看板網址 → 應該看到 Google 的「沒有存取權」頁面。
+- 其餘項目見 `docs/P7-實機檢核.md`。
+
+### 更新
+
+- 改了 `gas-dashboard/` 後，在 `gas-dashboard` 資料夾執行 `clasp push --force`，再到「管理部署作業」把版本換成新版本（網址不變）。
+- `gas/Shared.gs` 改了要同步複製到 `gas-dashboard/Shared.gs`（`node --test` 會檢查兩份一樣）。
+- 兩個專案都綁同一份試算表；試算表選單「AI 寵物」只由學生端專案的 `Admin.gs` 建立，看板專案不放 `onOpen`。

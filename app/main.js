@@ -11,6 +11,7 @@ import { createPromptPage } from './prompt.js';
 import { h } from './dom.js';
 import { icon, stars } from './icons.js';
 import { SKILLS } from '../blocks/blocks.js';
+import { promptOf, applyEnergyReset } from '../blocks/log.js';
 import { measure } from '../train/data.js';
 
 const FLUSH_EVERY_MS = 20000;
@@ -88,7 +89,9 @@ async function refreshPet() {
     return;
   }
   const before = pet.lesson;
-  pet = store.savePet(mergePet(store.loadPet(serial) || pet, serial, res, appearanceOf(serial)));
+  pet = mergePet(store.loadPet(serial) || pet, serial, res, appearanceOf(serial));
+  pet.prompt = applyEnergyReset(promptOf(pet), pet.lesson, res.energyReset); // 老師在看板重設了這堂能量
+  pet = store.savePet(pet);
   if (pet.lesson !== before || res.pet) renderHome();
 }
 

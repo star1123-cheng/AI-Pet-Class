@@ -14,6 +14,7 @@ var SHEETS = {
   prompts_log: ['serial', 'lesson', 'blocks', 'copyCount', 'ts'],
   config: ['currentLesson', 'skillOverrides'],
   serials: ['serial', 'claimed'],
+  energy_resets: ['serial', 'lesson', 'ts'], // 老師在看板按「重設能量」；serial 為 * 代表全班
 };
 
 var SKILL_IDS = ['score', 'timer', 'easter', 'feedback', 'sound', 'anim', 'levels', 'highscore', 'adapt'];
@@ -32,6 +33,8 @@ var MAX_SAMPLES_PER_CALL = 20;
 var MAX_SAMPLES_PER_PET = 300;
 var QUIZ_FORMS = { A: ['A1', 'A2', 'A3', 'A4', 'A5'], B: ['B1', 'B2', 'B3', 'B4', 'B5'] };
 var QUIZ_CHOICES = ['a', 'b', 'c'];
+// 學生在 Canvas 做完、按「我完成了」自報的任務（docs/03 第 3 節），老師在看板確認
+var SELF_TASKS = ['l4s1', 'l4s2', 'l4s3', 'l5s1', 'l5s2'];
 
 function doGet() {
   return json_({ ok: true, app: 'ai-pet' });
@@ -77,8 +80,10 @@ function newCtx_(ss) {
     return sh;
   }
 
-  function rows(name) {
+  // optional：舊試算表還沒有這個分頁時當成空的（例如 P7 新增的 energy_resets）
+  function rows(name, optional) {
     if (!cache[name]) {
+      if (optional && !ss.getSheetByName(name)) return [];
       var sh = sheet(name);
       var last = sh.getLastRow();
       cache[name] = last < 2 ? [] : sh.getRange(2, 1, last - 1, SHEETS[name].length).getValues();
@@ -184,6 +189,24 @@ function newCtx_(ss) {
       sheet('quiz').appendRow(values);
       rows('quiz').push(values);
     },
+    tasksOf: function (serial) {
+      return rows('tasks').filter(function (r) {
+        return String(r[0]) === serial;
+      });
+    },
+    addTask: function (values) {
+      sheet('tasks').appendRow(values);
+      rows('tasks').push(values);
+    },
+    // 這個序號在這一堂最近一次被重設能量的時間（毫秒）；沒有就是 0
+    energyReset: function (serial, lesson) {
+      var ts = 0;
+      rows('energy_resets', true).forEach(function (r) {
+        var who = String(r[0]);
+        if ((who === serial || who === '*') && Number(r[1]) === lesson) ts = Math.max(ts, Number(r[2]) || 0);
+      });
+      return ts;
+    },
     commit: function () {
       if (!newEvents.length) return;
       var sh = sheet('events');
@@ -198,7 +221,7 @@ function batch_(ctx, items) {
   if (!Array.isArray(items) || items.length > MAX_BATCH) return { ok: false, error: 'bad_request' };
   var results = items.map(function (it) {
     var eid = it && typeof it.eid === 'string' && EID_RE.test(it.eid) ? it.eid : '';
-    if (!eid || !it.payload || typeof it.payload !== 'object' || ['claimPet', 'savePet', 'logEvent', 'logPrompt', 'saveSamples', 'submitQuiz'].indexOf(it.action) < 0) {
+    if (!eid || !it.payload || typeof it.payload !== 'object' || ['claimPet', 'savePet', 'logEvent', 'logPrompt', 'saveSamples', 'submitQuiz', 'reportTask'].indexOf(it.action) < 0) {
       return { eid: eid, ok: false, error: 'bad_request' };
     }
     var r = handle_(ctx, it.action, it.payload, eid);
@@ -216,6 +239,7 @@ function handle_(ctx, action, p, eid) {
   if (action === 'getBrain') return getBrain_(ctx, p);
   if (action === 'saveSamples') return saveSamples_(ctx, p);
   if (action === 'submitQuiz') return submitQuiz_(ctx, p);
+  if (action === 'reportTask') return reportTask_(ctx, p);
   return { ok: false, error: 'bad_request' };
 }
 
@@ -242,7 +266,16 @@ function getPet_(ctx, p) {
   var err = checkSerial_(ctx, p.serial);
   if (err) return { ok: false, error: err };
   var row = ctx.petRow(p.serial);
-  return { ok: true, pet: row ? rowToPet_(ctx.readPet(row)) : null, currentLesson: ctx.currentLesson() };
+  var lesson = ctx.currentLesson();
+  return {
+    ok: true,
+    pet: row ? rowToPet_(ctx.readPet(row)) : null,
+    currentLesson: lesson,
+    energyReset: ctx.energyReset(p.serial, lesson), // 前端比對後把這堂能量歸零
+    tasks: ctx.tasksOf(p.serial).map(function (r) {
+      return { taskId: String(r[1]), status: String(r[2]) };
+    }),
+  };
 }
 
 function savePet_(ctx, p) {
@@ -365,6 +398,20 @@ function submitQuiz_(ctx, p) {
     dup = false;
   });
   return dup ? { ok: true, dup: true } : { ok: true };
+}
+
+// 自報任務：只收 SELF_TASKS 的代碼；同一序號同一任務只記一次（已確認的不會被改回自報）
+function reportTask_(ctx, p) {
+  var err = checkSerial_(ctx, p.serial);
+  if (err) return { ok: false, error: err };
+  if (!ctx.petRow(p.serial)) return { ok: false, error: 'not_claimed' };
+  if (SELF_TASKS.indexOf(p.taskId) < 0) return { ok: false, error: 'bad_request' };
+  var dup = ctx.tasksOf(p.serial).some(function (r) {
+    return String(r[1]) === p.taskId;
+  });
+  if (dup) return { ok: true, dup: true };
+  ctx.addTask([p.serial, p.taskId, 'self', new Date()]);
+  return { ok: true };
 }
 
 // ── 欄位清理 ──

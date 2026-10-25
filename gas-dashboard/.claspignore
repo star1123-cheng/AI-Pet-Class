@@ -1,0 +1,5 @@
+# clasp push 只上傳看板專案的程式、頁面與資訊清單（路徑相對於 gas-dashboard/.clasp.json 的 rootDir）
+**/**
+!appsscript.json
+!*.gs
+!*.html

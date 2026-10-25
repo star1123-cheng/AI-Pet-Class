@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root {
+    --table: #eef1f8; --table-2: #e1e6f2; --ink: #1e2140; --ink-2: #474d75; --line: #c9d0e3;
+    --panel: #ffffff; --paper: #fffbea; --gold: #ffd23f; --blue: #2f6beb; --blue-deep: #1f4fc0;
+    --blue-soft: #e3ecff; --good: #167a4b; --good-soft: #e0f4e9; --bad: #c8323c; --note: #fff2c2;
+    --round: ui-rounded, "SF Pro Rounded", "PingFang TC", "Noto Sans TC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--table); color: var(--ink);
+    font: 500 18px/1.55 -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  [hidden] { display: none !important; }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1, h2 { font-family: var(--round); font-weight: 800; margin: 0; }
+  h1 { font-size: 28px; }
+  h2 { font-size: 21px; margin-bottom: 12px; }
+  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-bottom: 16px; }
+  .top .meta { margin: 0; color: var(--ink-2); flex: 1 1 260px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 2px solid var(--line); border-radius: 18px; padding: 18px 20px; }
+  .card.wide { grid-column: 1 / -1; }
+  .hint { color: var(--ink-2); font-size: 16px; margin: 10px 0 0; }
+  button, .link {
+    font: 700 18px var(--round); min-height: 48px; padding: 0 18px; border-radius: 14px;
+    border: 2px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
+  }
+  button.primary { background: var(--blue); border-color: var(--blue-deep); color: #fff; }
+  button.warn { border-color: var(--bad); color: var(--bad); }
+  button:disabled { opacity: .5; cursor: default; }
+  button:focus-visible, input:focus-visible, .link:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 8px; }
+  .seg button[aria-pressed="true"] { background: var(--blue-soft); border-color: var(--blue); color: var(--blue-deep); }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .tile { background: var(--paper); border: 2px solid var(--ink); border-radius: 16px; padding: 14px 16px; }
+  .tile .num { font: 800 44px/1.1 var(--round); }
+  .tile .label { color: var(--ink-2); font-size: 16px; }
+  ul.pending { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  ul.pending li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--table-2); }
+  .serial { font: 800 20px ui-monospace, Menlo, monospace; letter-spacing: .1em; }
+  ul.pending .task { flex: 1; }
+  .count { font: 800 16px var(--round); background: var(--ink); color: #fff; border-radius: 999px; padding: 2px 10px; vertical-align: middle; }
+  .bars { display: grid; gap: 10px; margin-top: 12px; }
+  .bar { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 4px 12px; align-items: center; }
+  .bar .track { grid-column: 1 / -1; height: 14px; background: var(--table-2); border-radius: 999px; overflow: hidden; }
+  .bar .fill { height: 100%; background: var(--blue); border-radius: 999px; }
+  .bar .val { text-align: right; font-weight: 700; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { padding: 8px 6px; border-bottom: 1px solid var(--table-2); text-align: left; }
+  th { color: var(--ink-2); font-size: 16px; font-weight: 600; }
+  td.up { color: var(--good); font-weight: 700; }
+  td.down { color: var(--bad); font-weight: 700; }
+  .hist { display: flex; align-items: flex-end; gap: 8px; height: 160px; padding-top: 24px; }
+  .hist .col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; }
+  .hist .b { width: 100%; background: var(--blue); border-radius: 8px 8px 0 0; min-height: 2px; }
+  .hist .n { font-weight: 800; }
+  .hist-labels { display: flex; gap: 8px; border-top: 2px solid var(--ink); padding-top: 4px; }
+  .hist-labels span { flex: 1; text-align: center; font-size: 15px; color: var(--ink-2); }
+  .heat { display: grid; grid-template-columns: auto repeat(3, 1fr); gap: 8px; align-items: stretch; }
+  .heat .h { font-size: 15px; color: var(--ink-2); align-self: center; text-align: center; }
+  .heat .cell {
+    border-radius: 12px; padding: 10px; border: 2px solid var(--line);
+    background: color-mix(in srgb, var(--blue) calc(var(--p, 0) * 55%), var(--panel));
+  }
+  .heat .cell b { display: block; font: 800 24px var(--round); }
+  .tools { display: grid; gap: 16px; }
+  .tools .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  input[type="text"] {
+    font: 800 20px ui-monospace, Menlo, monospace; letter-spacing: .1em; text-transform: uppercase;
+    height: 48px; width: 11em; padding: 0 12px; border: 2px solid var(--line); border-radius: 12px; color: var(--ink);
+  }
+  .out { font-weight: 700; min-height: 1.55em; margin: 0; }
+  .out.ok { color: var(--good); }
+  .out.bad { color: var(--bad); }
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); margin: 0;
+    background: var(--ink); color: #fff; padding: 10px 20px; border-radius: 999px; font-weight: 700;
+  }
+  #toast:empty { display: none; }
+  .stale { background: var(--note); border-radius: 12px; padding: 8px 14px; margin: 0 0 16px; }
+
+  /* 展示機：只顯示班級合作指標，遠處也看得到 */
+  #display { max-width: none; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 4vh 5vw; }
+  #display h1 { font-size: clamp(32px, 5vw, 64px); margin-bottom: 4vh; }
+  #display .tiles { gap: 2vw; }
+  #display .tile { padding: 3vh 2vw; border-width: 4px; border-radius: 26px; }
+  #display .tile .num { font-size: clamp(56px, 10vw, 160px); }
+  #display .tile .label { font: 800 clamp(20px, 2.4vw, 40px)/1.2 var(--round); color: var(--ink); }
+  #display .meta { margin-top: 3vh; color: var(--ink-2); font-size: clamp(16px, 1.6vw, 24px); }
+  @media (max-width: 720px) { .tiles { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: no-preference) { .bar .fill, .hist .b { transition: width .4s, height .4s; } }
+</style>
+</head>
+<body data-view="<?= view ?>" data-url="<?= url ?>">
+
+<main id="teacher" hidden>
+  <header class="top">
+    <h1>AI 寵物 教師看板</h1>
+    <p class="meta"><span id="claimInfo">讀取中…</span>　<span id="updated"></span></p>
+    <button id="refresh" type="button">重新整理</button>
+    <a id="displayLink" class="link" target="_blank" rel="noopener">開啟展示機畫面</a>
+  </header>
+  <p class="stale" id="stale" hidden></p>
+
+  <div class="grid">
+    <section class="card wide" aria-labelledby="h-coop">
+      <h2 id="h-coop">班級合作指標</h2>
+      <div class="tiles" id="coopTiles"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-lesson">
+      <h2 id="h-lesson">目前堂次</h2>
+      <div class="seg" id="lessons" role="group" aria-label="切換目前堂次"></div>
+      <p class="hint">學生回到寵物畫面時會跟著換（最多等 30 秒）。</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-pending">
+      <h2 id="h-pending">待確認的任務 <span class="count" id="pendingCount">0</span></h2>
+      <ul class="pending" id="pending"></ul>
+      <p class="hint" id="pendingEmpty">目前沒有學生自報完成的任務。</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-sheet">
+      <h2 id="h-sheet">迷你任務單答對率</h2>
+      <div class="seg" id="sheetTabs" role="group" aria-label="選擇堂次"></div>
+      <div class="bars" id="sheetBars"></div>
+      <p class="hint">同一位學生同一題只算第一次作答。</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-quiz">
+      <h2 id="h-quiz">前後測（整班，依題目）</h2>
+      <p id="quizSummary"></p>
+      <table>
+        <thead><tr><th>題號</th><th>前測 A 答對率</th><th>後測 B 答對率</th><th>變化（百分點）</th></tr></thead>
+        <tbody id="quizRows"></tbody>
+      </table>
+    </section>
+
+    <section class="card" aria-labelledby="h-count">
+      <h2 id="h-count">資料量分布（張，人數）</h2>
+      <div id="histCount"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-quality">
+      <h2 id="h-quality">資料品質分布（分，人數）</h2>
+      <div id="histQuality"></div>
+    </section>
+
+    <section class="card wide" aria-labelledby="h-skill">
+      <h2 id="h-skill">作品道具解鎖（人數／已領養）</h2>
+      <div class="heat" id="heat"></div>
+    </section>
+
+    <section class="card wide" aria-labelledby="h-tools">
+      <h2 id="h-tools">序號與能量工具</h2>
+      <div class="tools">
+        <div>
+          <div class="row">
+            <label for="lookupInput">查序號</label>
+            <input id="lookupInput" type="text" maxlength="12" autocomplete="off" spellcheck="false" placeholder="6 碼序號">
+            <button id="lookupBtn" type="button">查詢</button>
+          </div>
+          <p class="out" id="lookupOut" aria-live="polite"></p>
+        </div>
+        <div>
+          <div class="row">
+            <span>序號卡弄丟或壞了：</span>
+            <button id="spareBtn" type="button">發一組新序號</button>
+          </div>
+          <p class="out" id="spareOut" aria-live="polite"></p>
+        </div>
+        <div>
+          <div class="row">
+            <label for="energyInput">重設這堂的能量</label>
+            <input id="energyInput" type="text" maxlength="12" autocomplete="off" spellcheck="false" placeholder="6 碼序號">
+            <button id="energyBtn" type="button">重設這位</button>
+            <button id="energyAllBtn" type="button" class="warn">重設全班</button>
+          </div>
+          <p class="out" id="energyOut" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<main id="display" hidden>
+  <h1 id="displayTitle">我們班的 AI 寵物</h1>
+  <div class="tiles" id="displayTiles"></div>
+  <p class="meta" id="displayMeta"></p>
+</main>
+
+<p id="toast" role="status" aria-live="polite"></p>
+
+<script>
+  // 畫面上的資料一律用 textContent 放進去，不用 innerHTML
+  var VIEW = document.body.dataset.view === 'display' ? 'display' : 'teacher';
+  var CACHE_KEY = 'ai-pet-dashboard-' + VIEW;
+  var REFRESH_MS = VIEW === 'display' ? 20000 : 30000;
+  var TASK_NAMES = {
+    l4s1: '第 4 堂 ★ 按鈕變色＋計分小頁面',
+    l4s2: '第 4 堂 ★★ 修好壞掉的保底版',
+    l4s3: '第 4 堂 ★★★ 依表現自己調整難度',
+    l5s1: '第 5 堂 ★ 合併夥伴、作品能玩一輪',
+    l5s2: '第 5 堂 ★★ 作品用 2 個以上道具',
+  };
+  var SKILLS = [
+    ['score', '計分'], ['timer', '計時'], ['easter', '彩蛋'],
+    ['feedback', '回饋話語'], ['sound', '音效'], ['anim', '角色動畫'],
+    ['levels', '關卡'], ['highscore', '最高分'], ['adapt', '難度自動調整'],
+  ];
+  var COOP = [
+    ['fed', '全班累積餵食張數'],
+    ['bias', '偵測偏誤次數'],
+    ['repaired', '修復成功次數'],
+  ];
+  var LOOKUP_TEXT = {
+    bad_serial: ['bad', '格式或檢查碼不對，可能打錯字（I、L、O、0、1 不會出現在序號裡）'],
+    unknown_serial: ['bad', '格式正確，但這組序號沒有發過'],
+    unclaimed: ['ok', '有效，還沒領養。請學生再輸入一次'],
+    claimed: ['ok', '有效，已經領養。換 iPad 時輸入同一組序號就能接續'],
+  };
+  var ERROR_TEXT = { busy: '試算表忙碌中，請再按一次', bad_request: '輸入的內容不對', unknown_serial: '這組序號沒有發過' };
+
+  var data = null;
+  var sheetLesson = null;
+
+  function $(id) { return document.getElementById(id); }
+
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      if (k === 'text') n.textContent = attrs[k];
+      else if (k === 'class') n.className = attrs[k];
+      else if (k === 'onclick') n.addEventListener('click', attrs[k]);
+      else n.setAttribute(k, attrs[k]);
+    });
+    (kids || []).forEach(function (c) { if (c) n.appendChild(c); });
+    return n;
+  }
+
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+  function run(name) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (ok, fail) {
+      var r = google.script.run.withSuccessHandler(ok).withFailureHandler(fail);
+      r[name].apply(r, args);
+    });
+  }
+
+  function toast(text) {
+    $('toast').textContent = text;
+    clearTimeout(toast.t);
+    toast.t = setTimeout(function () { $('toast').textContent = ''; }, 3000);
+  }
+
+  function pct(right, n) { return n ? Math.round((right / n) * 100) : null; }
+  function pctText(right, n) { var p = pct(right, n); return p === null ? '—' : p + '%'; }
+  function timeText(ms) {
+    var d = new Date(ms);
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+  function normalize(s) { return String(s || '').toUpperCase().replace(/[\s-]/g, ''); }
+
+  // 本機快取：連不上時先顯示上一次的數字（私密模式等讀寫失敗就略過）
+  function saveCache(d) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(d)); } catch (e) {} }
+  function loadCache() { try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch (e) { return null; } }
+
+  function coopTiles(box, coop) {
+    clear(box);
+    COOP.forEach(function (c) {
+      box.appendChild(el('div', { class: 'tile' }, [
+        el('div', { class: 'num', text: String(coop[c[0]]) }),
+        el('div', { class: 'label', text: c[1] }),
+      ]));
+    });
+  }
+
+  // ── 教師模式 ──
+  function renderTeacher(d) {
+    $('claimInfo').textContent = '第 ' + d.lesson + ' 堂 · 已領養 ' + d.claimed + '／發出 ' + d.issued + ' 組序號';
+    $('updated').textContent = '更新於 ' + timeText(d.updated);
+    coopTiles($('coopTiles'), d.coop);
+    renderLessons(d.lesson);
+    renderPending(d.pending);
+    if (sheetLesson === null) sheetLesson = Math.min(Math.max(d.lesson, 1), 3);
+    renderSheets(d.sheets);
+    renderQuiz(d.quiz);
+    renderHist($('histCount'), d.dataCount);
+    renderHist($('histQuality'), d.dataQuality);
+    renderHeat(d.skills, d.claimed);
+  }
+
+  function renderLessons(current) {
+    var box = $('lessons');
+    clear(box);
+    [1, 2, 3, 4, 5, 6].forEach(function (n) {
+      box.appendChild(el('button', {
+        type: 'button', text: '第 ' + n + ' 堂', 'aria-pressed': String(n === current),
+        onclick: function () {
+          if (n === current) return;
+          act(run('setLesson', n), '已切換到第 ' + n + ' 堂');
+        },
+      }));
+    });
+  }
+
+  function renderPending(list) {
+    var box = $('pending');
+    clear(box);
+    $('pendingCount').textContent = String(list.length);
+    $('pendingEmpty').hidden = list.length > 0;
+    list.forEach(function (p) {
+      var btn = el('button', { type: 'button', class: 'primary', text: '確認' });
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        act(run('confirmTask', p.serial, p.taskId), '已確認 ' + p.serial);
+      });
+      box.appendChild(el('li', {}, [
+        el('span', { class: 'serial', text: p.serial }),
+        el('span', { class: 'task', text: TASK_NAMES[p.taskId] || p.taskId }),
+        btn,
+      ]));
+    });
+  }
+
+  function renderSheets(sheets) {
+    var tabs = $('sheetTabs');
+    clear(tabs);
+    [1, 2, 3].forEach(function (n) {
+      tabs.appendChild(el('button', {
+        type: 'button', text: '第 ' + n + ' 堂', 'aria-pressed': String(n === sheetLesson),
+        onclick: function () { sheetLesson = n; renderSheets(sheets); },
+      }));
+    });
+    var box = $('sheetBars');
+    clear(box);
+    sheets.filter(function (s) { return s.lesson === sheetLesson; }).forEach(function (s, i) {
+      var fill = el('div', { class: 'fill' });
+      fill.style.width = (pct(s.right, s.n) || 0) + '%';
+      box.appendChild(el('div', { class: 'bar' }, [
+        el('span', { text: '第 ' + (i + 1) + ' 題（' + s.n + ' 人作答）' }),
+        el('span', { class: 'val', text: pctText(s.right, s.n) }),
+        el('div', { class: 'track' }, [fill]),
+      ]));
+    });
+  }
+
+  function renderQuiz(q) {
+    var avg = function (v) { return v === null ? '—' : v + ' 題'; };
+    $('quizSummary').textContent =
+      '平均答對：前測 ' + avg(q.A.avg) + '（' + q.A.n + ' 人）、後測 ' + avg(q.B.avg) + '（' + q.B.n + ' 人）。' +
+      (q.paired.n ? '兩次都做的 ' + q.paired.n + ' 人：' + q.paired.avgA + ' → ' + q.paired.avgB + ' 題。' : '');
+    var body = $('quizRows');
+    clear(body);
+    q.items.forEach(function (it) {
+      var a = pct(it.a.right, it.a.n);
+      var b = pct(it.b.right, it.b.n);
+      var diff = a === null || b === null ? null : b - a;
+      body.appendChild(el('tr', {}, [
+        el('td', { text: '第 ' + it.item + ' 題' }),
+        el('td', { text: pctText(it.a.right, it.a.n) }),
+        el('td', { text: pctText(it.b.right, it.b.n) }),
+        el('td', {
+          class: diff === null ? '' : diff > 0 ? 'up' : diff < 0 ? 'down' : '',
+          text: diff === null ? '—' : (diff > 0 ? '▲ +' : diff < 0 ? '▼ ' : '') + diff,
+        }),
+      ]));
+    });
+  }
+
+  function renderHist(box, bins) {
+    clear(box);
+    var max = Math.max.apply(null, bins.map(function (b) { return b.n; }).concat([1]));
+    var cols = el('div', { class: 'hist' });
+    var labels = el('div', { class: 'hist-labels' });
+    bins.forEach(function (b) {
+      var bar = el('div', { class: 'b' });
+      bar.style.height = (b.n / max) * 100 + '%';
+      cols.appendChild(el('div', { class: 'col' }, [el('span', { class: 'n', text: String(b.n) }), bar]));
+      labels.appendChild(el('span', { text: b.hi === null ? b.lo + ' 以上' : b.lo === b.hi ? String(b.lo) : b.lo + '–' + b.hi }));
+    });
+    box.appendChild(cols);
+    box.appendChild(labels);
+  }
+
+  function renderHeat(skills, claimed) {
+    var box = $('heat');
+    clear(box);
+    var count = {};
+    skills.forEach(function (s) { count[s.id] = s.n; });
+    box.appendChild(el('span'));
+    ['★', '★★', '★★★'].forEach(function (s) { box.appendChild(el('span', { class: 'h', text: s })); });
+    [2, 3, 4].forEach(function (lesson, row) {
+      box.appendChild(el('span', { class: 'h', text: '第 ' + lesson + ' 堂' }));
+      SKILLS.slice(row * 3, row * 3 + 3).forEach(function (s) {
+        var n = count[s[0]] || 0;
+        var p = claimed ? n / claimed : 0;
+        var cell = el('div', { class: 'cell' }, [
+          el('span', { text: s[1] }),
+          el('b', { text: n + '／' + claimed }),
+        ]);
+        cell.style.setProperty('--p', String(p));
+        box.appendChild(cell);
+      });
+    });
+  }
+
+  // 呼叫管理動作，成功後重新讀看板
+  function act(promise, okText, out) {
+    return promise.then(function (r) {
+      if (!r || !r.ok) throw new Error((r && ERROR_TEXT[r.error]) || '沒有成功，請再試一次');
+      if (out) { out.className = 'out ok'; out.textContent = okText; } else toast(okText);
+      return load();
+    }).catch(function (e) {
+      var text = e && e.message ? e.message : '連不上，請檢查網路';
+      if (out) { out.className = 'out bad'; out.textContent = text; } else toast(text);
+      load();
+    });
+  }
+
+  function setupTools() {
+    $('lookupBtn').addEventListener('click', function () {
+      var out = $('lookupOut');
+      run('lookupSerial', $('lookupInput').value).then(function (r) {
+        var t = LOOKUP_TEXT[r.status];
+        out.className = 'out ' + t[0];
+        out.textContent = r.serial + '：' + t[1];
+      }).catch(function () { out.className = 'out bad'; out.textContent = '連不上，請檢查網路'; });
+    });
+    $('spareBtn').addEventListener('click', function () {
+      var out = $('spareOut');
+      run('issueSpareSerial').then(function (r) {
+        if (!r.ok) throw new Error();
+        out.className = 'out ok';
+        out.textContent = '新序號：' + r.serial + '（請記進你的對照表，不要寫進試算表）';
+        load();
+      }).catch(function () { out.className = 'out bad'; out.textContent = '沒有成功，請再按一次'; });
+    });
+    $('energyBtn').addEventListener('click', function () {
+      var s = normalize($('energyInput').value);
+      act(run('resetEnergy', s), s + ' 的能量已重設，回到寵物畫面後生效', $('energyOut'));
+    });
+    // 全班重設要按兩次，避免誤觸
+    var armed = null;
+    $('energyAllBtn').addEventListener('click', function () {
+      var btn = $('energyAllBtn');
+      if (!armed) {
+        btn.textContent = '再按一次確定重設全班';
+        armed = setTimeout(function () { armed = null; btn.textContent = '重設全班'; }, 4000);
+        return;
+      }
+      clearTimeout(armed);
+      armed = null;
+      btn.textContent = '重設全班';
+      act(run('resetEnergy', '*'), '全班這堂的能量已重設，回到寵物畫面後生效', $('energyOut'));
+    });
+    $('refresh').addEventListener('click', function () { load(); });
+    var url = document.body.dataset.url;
+    if (url) $('displayLink').href = url + '?view=display';
+    else $('displayLink').hidden = true;
+  }
+
+  // ── 展示機模式 ──
+  function renderDisplay(d) {
+    $('displayTitle').textContent = '我們班的 AI 寵物 · 第 ' + d.lesson + ' 堂';
+    coopTiles($('displayTiles'), d.coop);
+    $('displayMeta').textContent = '全班一起累積的數字 · 更新於 ' + timeText(d.updated);
+  }
+
+  function render(d) {
+    if (VIEW === 'display') renderDisplay(d);
+    else renderTeacher(d);
+  }
+
+  function load() {
+    return run(VIEW === 'display' ? 'getDisplay' : 'getDashboard').then(function (d) {
+      data = d;
+      saveCache(d);
+      $('stale').hidden = true;
+      render(d);
+    }).catch(function () {
+      var cached = data || loadCache();
+      if (VIEW === 'display') {
+        if (cached) {
+          renderDisplay(cached);
+          $('displayMeta').textContent = '連線中斷，顯示 ' + timeText(cached.updated) + ' 的數字';
+        }
+        return;
+      }
+      if (cached && !data) renderTeacher(cached);
+      $('stale').hidden = false;
+      $('stale').textContent = cached
+        ? '連不上試算表，先顯示 ' + timeText(cached.updated) + ' 的資料。會自動再試。'
+        : '連不上試算表，會自動再試。';
+    });
+  }
+
+  $(VIEW).hidden = false;
+  if (VIEW === 'teacher') setupTools();
+  var first = loadCache();
+  if (first) render(first);
+  load();
+  setInterval(function () { if (!document.hidden) load(); }, REFRESH_MS);
+</script>
+</body>
+</html>

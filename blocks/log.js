@@ -2,10 +2,16 @@
 import { energyFor } from './blocks.js';
 import { normalize } from './compose.js';
 
-// pet.prompt：{ used: { 堂次: 已複製次數 }, selected: [積木代碼], partner: { serial, skills, appearance } }
+// pet.prompt：{ used: { 堂次: 已複製次數 }, selected: [積木代碼], partner: { serial, skills, appearance }, resetAt }
 export function promptOf(pet) {
   const p = pet.prompt || {};
-  return { used: { ...(p.used || {}) }, selected: p.selected || null, partner: p.partner || null };
+  return { used: { ...(p.used || {}) }, selected: p.selected || null, partner: p.partner || null, resetAt: p.resetAt || 0 };
+}
+
+// 老師在看板按「重設能量」：GAS 回傳這堂最近一次重設的時間，比這台 iPad 上次套用的新，就把這堂次數歸零
+export function applyEnergyReset(prompt, lesson, stamp) {
+  if (!stamp || stamp <= (prompt.resetAt || 0)) return prompt;
+  return { ...prompt, used: { ...prompt.used, [lesson]: 0 }, resetAt: stamp };
 }
 
 export function energyLeft(prompt, lesson) {

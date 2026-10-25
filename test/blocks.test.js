@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CATEGORIES, SKILLS, energyFor } from '../blocks/blocks.js';
 import { compose, toggleBlock, normalize, missing, mergeSkills, defaultSelection } from '../blocks/compose.js';
-import { promptOf, energyLeft, spendEnergy, promptLog } from '../blocks/log.js';
+import { promptOf, energyLeft, spendEnergy, promptLog, applyEnergyReset } from '../blocks/log.js';
 import { createGas, fakeFetch } from './gas-fake.js';
 import { createStore, safeStorage } from '../app/store.js';
 import { createApi } from '../app/api.js';
@@ -83,6 +83,19 @@ test('能量：用完就不能再複製，每堂分開計', () => {
   assert.equal(energyLeft(p, 4), 0);
   assert.equal(spendEnergy(p, 4), null);
   assert.equal(energyLeft(p, 5), 10);
+});
+
+test('老師重設能量：只歸零這堂，同一次重設不會套用兩次', () => {
+  let p = promptOf({});
+  for (let i = 0; i < 8; i++) p = spendEnergy(p, 4);
+  p = spendEnergy(p, 5);
+  assert.equal(applyEnergyReset(p, 4, 0), p); // 沒有重設紀錄
+  const r = applyEnergyReset(p, 4, 1000);
+  assert.equal(energyLeft(r, 4), 8);
+  assert.equal(energyLeft(r, 5), 9);
+  const again = applyEnergyReset(spendEnergy(r, 4), 4, 1000);
+  assert.equal(energyLeft(again, 4), 7); // 已經套用過的重設不再歸零
+  assert.equal(promptOf({ prompt: again }).resetAt, 1000); // 存檔後還記得
 });
 
 test('紀錄只有積木代碼與次數，沒有文字', () => {
