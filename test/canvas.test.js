@@ -10,7 +10,8 @@ import { trainingSet, testSets, shapeStroke, makeRng, LABELS } from '../engine/s
 import { SKILL_IDS, skillBlock, keepSkills, setData, readData, buildCanvas, buildCopy, canvasPet, fallbackCopy, byteLength, GEMINI_INTRO, MAX_TEMPLATE_BYTES } from '../canvas/build.js';
 import { demoFiles, DEMO_A, DEMO_B } from '../tools/build-canvas.mjs';
 
-const read = (p) => readFileSync(new URL('../' + p, import.meta.url), 'utf8');
+// 換行一律當成 LF：另一台電腦的 Git 可能把檔案換成 CRLF
+const read = (p) => readFileSync(new URL('../' + p, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const TEMPLATE = read('canvas/template.html');
 const KINDS = { 圓: 'circle', 方: 'square', 三角: 'triangle' };
 
