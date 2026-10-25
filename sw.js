@@ -1,6 +1,6 @@
 // 離線快取：先試網路，失敗才用快取（開發時改了檔案也能馬上看到新版）
 // 改了 FILES 清單時，把 CACHE 的版本號加 1，舊快取會在啟用時刪掉
-const CACHE = 'aipet-v2';
+const CACHE = 'aipet-v3';
 const FILES = [
   './',
   'index.html',

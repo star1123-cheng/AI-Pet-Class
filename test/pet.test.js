@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CHARSET, normalizeSerial, validateSerial, checkChar, makeSerial } from '../pet/serial.js';
 import { COMBINATIONS, appearanceId, appearanceOf, appearanceFromId, isValidAppearance, PARTS } from '../pet/appearance.js';
-import { renderPetSVG } from '../pet/render.js';
+import { renderPetSVG, coreLevel } from '../pet/render.js';
 
 // 固定種子的亂數，讓測試每次結果一樣
 function seeded(seed) {
@@ -100,6 +100,35 @@ test('完成標準：外型渲染不依賴外部資源（每種參數的輸出�
       assert.ok(!/http|href|<image|@import|url\((?!#)/i.test(svg), `${name}=${v} 有外部資源`);
     }
   }
+});
+
+test('6 種動物 × 4 種耳型都畫得出來，而且畫出來都不一樣', () => {
+  const seen = new Set();
+  for (let body = 0; body < 6; body++) {
+    for (let ears = 0; ears < 4; ears++) {
+      const svg = renderPetSVG({ ...appearanceFromId(0), body, ears }).replace(/petclip\d+/g, '');
+      assert.ok(!/http|href|<image|@import|url\((?!#)|undefined|NaN/i.test(svg), `body=${body} ears=${ears}`);
+      seen.add(svg);
+    }
+  }
+  assert.equal(seen.size, 24);
+});
+
+test('AI 核心亮度跟著準確率：還沒考過熄燈，70% 以上全亮', () => {
+  assert.equal(coreLevel(null), 0);
+  assert.equal(coreLevel(undefined), 0);
+  assert.equal(coreLevel(NaN), 0);
+  assert.equal(coreLevel(0), 1);
+  assert.equal(coreLevel(0.39), 1);
+  assert.equal(coreLevel(0.4), 2);
+  assert.equal(coreLevel(0.69), 2);
+  assert.equal(coreLevel(0.7), 3);
+  assert.equal(coreLevel(1), 3);
+  const a = appearanceFromId(0);
+  assert.ok(!renderPetSVG(a, { accuracy: null }).includes('pet-core'), '還沒考過不發光、不閃');
+  assert.ok(renderPetSVG(a, { accuracy: 0.2 }).includes('pet-core-1'));
+  assert.ok(renderPetSVG(a, { accuracy: 0.85 }).includes('pet-core-3'));
+  assert.ok(renderPetSVG(a).includes('pet-core-2'), '沒傳準確率時畫成「亮」');
 });
 
 test('同一頁放兩隻寵物，clipPath id 不衝突', () => {

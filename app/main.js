@@ -94,8 +94,8 @@ function showHome() {
 
 function renderHome() {
   $('serialTag').textContent = '序號 ' + pet.serial;
-  mountPet($('pet'), pet.appearance, { label: '我的 AI 寵物' });
   const s = pet.state;
+  mountPet($('pet'), pet.appearance, { label: '我的 AI 寵物', accuracy: s.accuracy ?? null });
   $('sData').textContent = `${s.dataCount} 張`;
   $('sQuality').textContent = String(Math.round(s.dataQuality));
   $('sTrain').textContent = `${s.trainCount} 次`;
