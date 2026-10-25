@@ -6,10 +6,12 @@ import { mountPet, coreLevel } from '../pet/render.js';
 import { createStore, mergePet } from './store.js';
 import { createApi } from './api.js';
 import { createLesson3 } from './lesson3.js';
+import { createLessons12 } from './lessons12.js';
 import { createPromptPage } from './prompt.js';
 import { h } from './dom.js';
 import { icon, stars } from './icons.js';
 import { SKILLS } from '../blocks/blocks.js';
+import { measure } from '../train/data.js';
 
 const FLUSH_EVERY_MS = 20000;
 
@@ -19,7 +21,10 @@ const api = createApi({ url: GAS_URL, store, onRejected });
 
 let pet = null;
 
-// 第 3 堂（P4）。堂次由老師在試算表 config 設定，P3 會再做完整的堂次切換
+// 堂次由老師在試算表 config 設定（currentLesson）；首頁依堂次決定能進哪些活動
+// 第 1、2 堂（P3）
+const lessons12 = createLessons12({ root: $('train'), store, api, getPet: () => pet, onExit: showHome });
+// 第 3 堂（P4）
 const lesson3 = createLesson3({ root: $('talk'), store, api, getPet: () => pet, onExit: showHome });
 // 提示詞積木（P5，第 4 堂起）
 const promptPage = createPromptPage({ root: $('prompt'), store, api, getPet: () => pet, onExit: showHome });
@@ -103,6 +108,8 @@ function onRejected(item, error) {
 // ── 寵物畫面 ──
 function showHome() {
   $('adopt').hidden = true;
+  lessons12.close();
+  $('train').hidden = true;
   $('talk').hidden = true;
   $('prompt').hidden = true;
   $('home').hidden = false;
@@ -114,6 +121,11 @@ function renderHome() {
   $('serialTag').textContent = '序號 ' + pet.serial;
   $('cardSerial').textContent = pet.serial;
   $('lessonTag').textContent = `第 ${pet.lesson} 堂`;
+  // 老師換堂次後類別與測試集會變（第 2 堂多了三角），所以數值依目前堂次重算
+  if (pet.samples?.length) {
+    const m = measure(pet.samples, pet.lesson);
+    pet.state = { ...pet.state, dataCount: m.dataCount, dataQuality: m.dataQuality, accuracy: m.accuracy };
+  }
   const s = pet.state;
   // 寵物只在換人或核心亮度改變時重畫，不然背景更新堂次時牠會再跳出來一次
   const petKey = pet.serial + '|' + coreLevel(s.accuracy ?? null);
@@ -128,25 +140,33 @@ function renderHome() {
   $('sAcc').textContent = s.accuracy === null || s.accuracy === undefined ? '還沒考過' : Math.round(s.accuracy * 100) + '%';
   renderItems();
   $('rejected').hidden = !pet.rejected;
-  $('lesson3Btn').hidden = pet.lesson < 3;
-  $('promptBtn').hidden = pet.lesson < 4;
-  // 一屏一個主要動作：本堂的入口是藍色，之前堂次的入口改成次要按鈕
-  $('lesson3Btn').classList.toggle('primary', pet.lesson === 3);
-  $('promptBtn').classList.toggle('primary', pet.lesson >= 4);
+  renderActions();
   showSync();
 }
 
-$('lesson3Btn').onclick = () => {
-  $('home').hidden = true;
-  $('talk').hidden = false;
-  lesson3.open();
-};
+// 各堂入口：from＝從第幾堂開始可以進去（第 4～6 堂都是提示詞積木）
+const ENTRIES = [
+  { from: 1, name: '第 1 堂：領養 AI', short: '第 1 堂', screen: 'train', open: () => lessons12.open(1) },
+  { from: 2, name: '第 2 堂：餵對與餵錯', short: '第 2 堂', screen: 'train', open: () => lessons12.open(2) },
+  { from: 3, name: '第 3 堂：AI 怎麼說話', short: '第 3 堂', screen: 'talk', open: () => lesson3.open() },
+  { from: 4, name: '提示詞積木', short: '積木', screen: 'prompt', open: () => promptPage.open() },
+];
 
-$('promptBtn').onclick = () => {
-  $('home').hidden = true;
-  $('prompt').hidden = false;
-  promptPage.open();
-};
+// 一屏一個主要動作：本堂的入口是藍色大按鈕，之前堂次的入口排成一列小按鈕
+function renderActions() {
+  const open = ENTRIES.filter((e) => e.from <= pet.lesson);
+  const now = open[open.length - 1];
+  const go = (e) => () => {
+    $('home').hidden = true;
+    $(e.screen).hidden = false;
+    e.open();
+  };
+  const past = open.slice(0, -1).map((e) => h('button', { class: 'small', text: e.short, onclick: go(e) }));
+  $('actions').replaceChildren(
+    ...(past.length ? [h('div', { class: 'past', role: 'group', 'aria-label': '之前的堂次' }, past)] : []),
+    h('button', { class: 'primary', onclick: go(now) }, now.name, icon('next')),
+  );
+}
 
 function showAdopt() {
   $('home').hidden = true;
@@ -195,8 +215,6 @@ function renderItems() {
 // 靜態畫面上的圖示（HTML 裡不放 emoji）
 $('adoptSlot').append(icon('cards', { size: '56px' }));
 $('rule1').prepend(icon('shield', { size: '26px' }));
-$('lesson3Btn').append(icon('next'));
-$('promptBtn').append(icon('next'));
 
 async function sync() {
   await api.flush();

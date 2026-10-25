@@ -28,6 +28,10 @@ var BLOCK_RE = /^[a-z][0-9]{1,2}$/; // 積木代碼，例如 w1、c4（docs/04 2
 var MAX_BLOCKS = 30;
 var MAX_BRAIN = 200; // 合併夥伴時最多回傳幾張樣本
 var HEX128_RE = /^[0-9a-f]{128}$/;
+var MAX_SAMPLES_PER_CALL = 20;
+var MAX_SAMPLES_PER_PET = 300;
+var QUIZ_FORMS = { A: ['A1', 'A2', 'A3', 'A4', 'A5'], B: ['B1', 'B2', 'B3', 'B4', 'B5'] };
+var QUIZ_CHOICES = ['a', 'b', 'c'];
 
 function doGet() {
   return json_({ ok: true, app: 'ai-pet' });
@@ -154,6 +158,32 @@ function newCtx_(ss) {
         return String(r[0]) === serial;
       });
     },
+    // serial＋idx → 試算表列號
+    sampleRow: function (serial, idx) {
+      var list = rows('samples');
+      for (var i = 0; i < list.length; i++) {
+        if (String(list[i][0]) === serial && Number(list[i][1]) === idx) return i + 2;
+      }
+      return 0;
+    },
+    writeSample: function (row, values) {
+      sheet('samples').getRange(row, 1, 1, values.length).setValues([values]);
+      rows('samples')[row - 2] = values;
+    },
+    appendSample: function (values) {
+      var sh = sheet('samples');
+      sh.appendRow(values);
+      rows('samples')[sh.getLastRow() - 2] = values;
+    },
+    hasQuiz: function (serial, form, q) {
+      return rows('quiz').some(function (r) {
+        return String(r[0]) === serial && String(r[1]) === form && String(r[2]) === q;
+      });
+    },
+    addQuiz: function (values) {
+      sheet('quiz').appendRow(values);
+      rows('quiz').push(values);
+    },
     commit: function () {
       if (!newEvents.length) return;
       var sh = sheet('events');
@@ -168,7 +198,7 @@ function batch_(ctx, items) {
   if (!Array.isArray(items) || items.length > MAX_BATCH) return { ok: false, error: 'bad_request' };
   var results = items.map(function (it) {
     var eid = it && typeof it.eid === 'string' && EID_RE.test(it.eid) ? it.eid : '';
-    if (!eid || !it.payload || typeof it.payload !== 'object' || ['claimPet', 'savePet', 'logEvent', 'logPrompt'].indexOf(it.action) < 0) {
+    if (!eid || !it.payload || typeof it.payload !== 'object' || ['claimPet', 'savePet', 'logEvent', 'logPrompt', 'saveSamples', 'submitQuiz'].indexOf(it.action) < 0) {
       return { eid: eid, ok: false, error: 'bad_request' };
     }
     var r = handle_(ctx, it.action, it.payload, eid);
@@ -184,6 +214,8 @@ function handle_(ctx, action, p, eid) {
   if (action === 'logEvent') return logEvent_(ctx, p, eid);
   if (action === 'logPrompt') return logPrompt_(ctx, p);
   if (action === 'getBrain') return getBrain_(ctx, p);
+  if (action === 'saveSamples') return saveSamples_(ctx, p);
+  if (action === 'submitQuiz') return submitQuiz_(ctx, p);
   return { ok: false, error: 'bad_request' };
 }
 
@@ -282,11 +314,57 @@ function getBrain_(ctx, p) {
   var pet = rowToPet_(ctx.readPet(row));
   var brain = [];
   ctx.samplesOf(p.serial).forEach(function (r) {
-    if (brain.length >= MAX_BRAIN || r[5] === true || String(r[5]).toLowerCase() === 'true') return;
+    if (brain.length >= MAX_BRAIN || !(r[5] === false || String(r[5]).toLowerCase() === 'false' || r[5] === '')) return; // 標錯、刪掉的不給
     if (CLASS_LABELS.indexOf(String(r[2])) < 0 || !HEX128_RE.test(String(r[3])) || !HEX128_RE.test(String(r[4]))) return;
     brain.push({ label: String(r[2]), g: String(r[3]), s: String(r[4]) });
   });
   return { ok: true, serial: pet.serial, appearance: appearanceOf_(pet.serial), skills: pet.skills, brain: brain };
+}
+
+// 訓練範例：依 serial＋idx 新增或覆蓋，補送重複不會多出列。任一張格式不對就整筆拒收
+function saveSamples_(ctx, p) {
+  var err = checkSerial_(ctx, p.serial);
+  if (err) return { ok: false, error: err };
+  if (!ctx.petRow(p.serial)) return { ok: false, error: 'not_claimed' };
+  var list = p.samples;
+  if (!Array.isArray(list) || !list.length || list.length > MAX_SAMPLES_PER_CALL) return { ok: false, error: 'bad_request' };
+  for (var i = 0; i < list.length; i++) {
+    var x = list[i];
+    if (!x || typeof x !== 'object' || typeof x.idx !== 'number' || x.idx !== Math.floor(x.idx) || x.idx < 0 || x.idx > 9999) return { ok: false, error: 'bad_request' };
+    if (CLASS_LABELS.indexOf(x.label) < 0 || !HEX128_RE.test(String(x.g)) || !HEX128_RE.test(String(x.s))) return { ok: false, error: 'bad_request' };
+    if (x.flagged !== true && x.flagged !== false && x.flagged !== 'removed') return { ok: false, error: 'bad_request' };
+  }
+  var count = ctx.samplesOf(p.serial).length;
+  list.forEach(function (x) {
+    var values = [p.serial, x.idx, x.label, x.g, x.s, x.flagged, new Date()];
+    var row = ctx.sampleRow(p.serial, x.idx);
+    if (row) ctx.writeSample(row, values);
+    else if (count < MAX_SAMPLES_PER_PET) {
+      ctx.appendSample(values);
+      count++;
+    }
+  });
+  return { ok: true };
+}
+
+// 前後測：只記選項代碼；同一序號同一題只記第一次
+function submitQuiz_(ctx, p) {
+  var err = checkSerial_(ctx, p.serial);
+  if (err) return { ok: false, error: err };
+  if (!ctx.petRow(p.serial)) return { ok: false, error: 'not_claimed' };
+  var qs = QUIZ_FORMS[p.form];
+  if (!qs || !Array.isArray(p.answers) || !p.answers.length || p.answers.length > qs.length) return { ok: false, error: 'bad_request' };
+  for (var i = 0; i < p.answers.length; i++) {
+    var a = p.answers[i];
+    if (!a || qs.indexOf(a.q) < 0 || QUIZ_CHOICES.indexOf(a.choice) < 0) return { ok: false, error: 'bad_request' };
+  }
+  var dup = true;
+  p.answers.forEach(function (a) {
+    if (ctx.hasQuiz(p.serial, p.form, a.q)) return;
+    ctx.addQuiz([p.serial, p.form, a.q, a.choice, new Date()]);
+    dup = false;
+  });
+  return dup ? { ok: true, dup: true } : { ok: true };
 }
 
 // ── 欄位清理 ──

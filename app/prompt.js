@@ -162,10 +162,10 @@ export function createPromptPage({ root, store, api, getPet, onExit }) {
   }
 
   // 一鍵複製的內容：自己（＋夥伴）的寵物外型、腦袋、作品道具，加上積木組好的提示詞（docs/04 3.1）
-  // 自己的腦袋來自 pet.samples（P3 存的訓練樣本）；還沒有樣本時範本會改用假資料
+  // 自己的腦袋來自 pet.samples（P3 存的訓練範例，標成標錯的不放）；還沒有範例時範本會改用假資料
   function canvasText(text, lite) {
     const pets = [
-      canvasPet({ appearance: pet.appearance, accuracy: pet.state?.accuracy, samples: pet.samples, phrase: phraseText(pet.talk?.phrase), name: '我的 AI 寵物', lite }),
+      canvasPet({ appearance: pet.appearance, accuracy: pet.state?.accuracy, samples: (pet.samples || []).filter((x) => !x.flagged), phrase: phraseText(pet.talk?.phrase), name: '我的 AI 寵物', lite }),
     ];
     const p = prompt.partner;
     if (p) pets.push(canvasPet({ appearance: appearanceOf(p.serial), brain: p.brain, name: '夥伴的 AI 寵物', lite }));

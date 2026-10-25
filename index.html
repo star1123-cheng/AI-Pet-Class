@@ -356,6 +356,58 @@
   .partner .pet.small { width: 96px; }
   .copy-box { width: 100%; height: 40dvh; font: 18px/1.5 -apple-system, "PingFang TC", sans-serif; border: 2.5px solid var(--ink); border-radius: 12px; padding: 10px; -webkit-user-select: text; user-select: text; }
 
+
+  /* ── 第 1、2 堂 ── */
+  .past { display: flex; flex-wrap: wrap; gap: 8px; }
+  .past button { flex: 1 1 0; }
+  /* 計時條：依建議時間慢慢填滿，超過時變成提醒色 */
+  .pace { display: flex; align-items: center; gap: 10px; width: min(560px, 100%); color: var(--ink-2); font-size: 18px; }
+  .pace-track { flex: 1; height: 10px; border-radius: 5px; background: var(--table-2); overflow: hidden; }
+  .pace-track i { display: block; height: 100%; width: 0; background: var(--sky); border-radius: 5px; transition: width 1s linear; }
+  .pace.over { color: var(--gold-deep); font-weight: 700; }
+  .pace.over .pace-track i { background: var(--gold); }
+  .tasks { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 6px; }
+  .tasks li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 8px 14px; }
+  .tasks li.done { border-color: var(--good); }
+  .task-goal { flex: 1 1 14em; font-weight: 700; }
+  .task-reward { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-2); }
+  .tasks .card-done { margin: 0; }
+  /* 畫布：白紙＋深靛框，手指畫的地方不捲動 */
+  .pad { width: min(440px, 100%, 52dvh); aspect-ratio: 1; display: block; background: #fff; border: 3px solid var(--ink); border-radius: 18px; touch-action: none; box-shadow: var(--lift); }
+  .pad-col { align-items: center; }
+  .labels button { flex: 1; min-height: 64px; font-size: 26px; border-width: 2.5px; }
+  .labels button.on { background: var(--blue-soft); border-color: var(--blue); color: var(--blue-deep); }
+  .stats { display: flex; flex-direction: column; gap: 8px; }
+  .mrow { display: grid; grid-template-columns: 5em 1fr auto; align-items: center; gap: 10px; }
+  .mrow-name { font-weight: 700; }
+  .mrow-num { display: inline-flex; align-items: center; gap: 4px; font: 800 20px var(--round); min-width: 4.5em; justify-content: flex-end; }
+  .mrow .meter { background: var(--table-2); }
+  .mrow.ok .meter i { background: var(--good); }
+  .mrow.ok .mrow-num { color: var(--good); }
+  .sub { font: 800 21px var(--round); margin: 0; }
+  .thumb { image-rendering: pixelated; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); flex: none; }
+  .neighbors, .tests { display: flex; flex-wrap: wrap; gap: 10px; }
+  .nb { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 700; }
+  .nb.miss .thumb { border-color: var(--bad); }
+  .tests { justify-content: center; max-width: 760px; }
+  .tests .nb { font-size: 18px; }
+  .result:empty { display: none; }
+  .suspect { display: flex; gap: 12px; align-items: flex-start; background: var(--panel); border: 2px solid var(--gold); border-radius: 14px; padding: 10px; }
+  .gallery { display: flex; flex-direction: column; gap: 8px; }
+  .gal-row { display: grid; grid-template-columns: 2.5em 1fr; gap: 8px; align-items: start; }
+  .gal-name { font-weight: 800; padding-top: 12px; }
+  .gal-items { display: flex; flex-wrap: wrap; gap: 6px; }
+  .gal-item { min-width: 0; min-height: 0; padding: 0; border: none; background: none; position: relative; border-radius: 8px; }
+  .gal-item.flagged .thumb { border-color: var(--bad); opacity: 0.55; }
+  .gal-item .icon { position: absolute; right: -4px; top: -4px; color: var(--bad); background: #fff; border-radius: 50%; }
+  /* 神祕資料包：點一張就標成「要移除」 */
+  .pack { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; width: 100%; max-width: 900px; }
+  .pack-item { flex-direction: column; gap: 6px; padding: 10px; min-height: 150px; border-width: 2.5px; border-color: var(--line); position: relative; }
+  .pack-item .tag { font: 800 22px var(--round); }
+  .pack-item.out { border-color: var(--bad); background: var(--bad-soft); }
+  .pack-item.out .thumb { opacity: 0.5; }
+  .out-mark { position: absolute; top: 6px; right: 6px; display: inline-flex; align-items: center; gap: 2px; color: var(--bad); font: 800 18px var(--round); }
+
   /* iPad 直放：兩欄一樣寬，右邊的道具卡和按鈕才不會擠到換行 */
   @media (max-width: 860px) {
     .home-grid { grid-template-columns: 1fr 1fr; gap: 20px; align-content: center; } /* 直放時整塊垂直置中，底下不會空一大段 */
@@ -373,6 +425,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .pet, .pet .pet-tail, .pet .pet-eyes, .pet .pet-core, .sheet, .reveal .item, .reveal .item::after { animation: none; }
+    .pace-track i { transition: none; }
     .reveal .item::after { display: none; }
     .meter i, .bar span { transition: none; }
   }
@@ -423,13 +476,15 @@
         <h2>作品道具卡 <span id="itemCount"></span></h2>
         <div id="items" class="item-grid"></div>
         <p class="hint">看牠胸前的 AI 核心：準確率越高，就越亮。</p>
-        <div class="actions">
-          <button id="lesson3Btn" class="primary" hidden>第 3 堂：AI 怎麼說話</button>
-          <button id="promptBtn" class="primary" hidden>提示詞積木</button>
-        </div>
+        <div id="actions" class="actions"></div>
       </section>
     </div>
     <p id="sync" class="sync" aria-live="polite"></p>
+  </main>
+
+  <main id="train" class="screen talk-screen" hidden>
+    <div class="talk-body"></div>
+    <div class="talk-overlay" hidden></div>
   </main>
 
   <main id="talk" class="screen talk-screen" hidden>

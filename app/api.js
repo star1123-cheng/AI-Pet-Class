@@ -2,6 +2,22 @@
 // 所有寫入都先進 store 的佇列，再由 flush() 一次用 batch 送出；失敗就留著下次再送。
 
 export const BATCH_SIZE = 50;
+// GAS 一次請求最多收 20,000 字（docs/05 第 4 節），留一點空間給外層欄位
+export const BATCH_CHARS = 18000;
+export const SAMPLES_PER_CALL = 20;
+
+// 從佇列前面拿出一批：最多 BATCH_SIZE 筆，而且合起來不超過 BATCH_CHARS 字（範例圖比較大）
+export function nextBatch(queue, size = BATCH_SIZE, chars = BATCH_CHARS) {
+  const out = [];
+  let used = 0;
+  for (const item of queue) {
+    const n = JSON.stringify(item).length + 1;
+    if (out.length >= size || (out.length && used + n > chars)) break;
+    out.push(item);
+    used += n;
+  }
+  return out;
+}
 
 // 這些錯誤重送也不會成功，直接移出佇列
 export const PERMANENT_ERRORS = new Set(['bad_request', 'bad_serial', 'unknown_serial', 'not_claimed']);
@@ -41,7 +57,7 @@ export function createApi({ url, store, fetchFn = globalThis.fetch, timeoutMs = 
   async function doFlush() {
     let sent = 0;
     while (url) {
-      const items = store.queue().slice(0, BATCH_SIZE);
+      const items = nextBatch(store.queue());
       if (!items.length) break;
       let res;
       try {
@@ -98,6 +114,18 @@ export function createApi({ url, store, fetchFn = globalThis.fetch, timeoutMs = 
     // 複製提示詞的紀錄（只有積木代碼與次數）
     logPrompt({ serial, lesson, blocks, copyCount }) {
       store.enqueue('logPrompt', { serial, lesson, blocks, copyCount });
+      return flush();
+    },
+    // 訓練範例（{idx, label, g, s, flagged}），一次最多 20 張，多的分成好幾筆排隊
+    saveSamples(serial, samples) {
+      for (let i = 0; i < samples.length; i += SAMPLES_PER_CALL) {
+        store.enqueue('saveSamples', { serial, samples: samples.slice(i, i + SAMPLES_PER_CALL) });
+      }
+      return flush();
+    },
+    // 前後測：answers [{q, choice}]，只有選項代碼
+    submitQuiz(serial, form, answers) {
+      store.enqueue('submitQuiz', { serial, form, answers });
       return flush();
     },
     // 合併夥伴：要有網路；沒網路回傳 null
