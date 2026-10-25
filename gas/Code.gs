@@ -24,6 +24,10 @@ var LOCK_WAIT_MS = 20000;
 var CODE_RE = /^[A-Za-z0-9_.-]{1,32}$/;
 var EID_RE = /^[A-Za-z0-9_-]{6,40}$/;
 var BADGE_RE = /^[A-Za-z0-9_-]{1,24}$/;
+var BLOCK_RE = /^[a-z][0-9]{1,2}$/; // 積木代碼，例如 w1、c4（docs/04 2.1）
+var MAX_BLOCKS = 30;
+var MAX_BRAIN = 200; // 合併夥伴時最多回傳幾張樣本
+var HEX128_RE = /^[0-9a-f]{128}$/;
 
 function doGet() {
   return json_({ ok: true, app: 'ai-pet' });
@@ -135,6 +139,21 @@ function newCtx_(ss) {
       newEvents.push(values);
       cache.eids[values[6]] = true;
     },
+    // 同一個序號、同一堂、同一個複製次數只記一次（補送重複時不重複寫入）
+    hasPromptLog: function (serial, lesson, copyCount) {
+      return rows('prompts_log').some(function (r) {
+        return String(r[0]) === serial && Number(r[1]) === lesson && Number(r[3]) === copyCount;
+      });
+    },
+    addPromptLog: function (values) {
+      sheet('prompts_log').appendRow(values);
+      rows('prompts_log').push(values);
+    },
+    samplesOf: function (serial) {
+      return rows('samples').filter(function (r) {
+        return String(r[0]) === serial;
+      });
+    },
     commit: function () {
       if (!newEvents.length) return;
       var sh = sheet('events');
@@ -149,7 +168,7 @@ function batch_(ctx, items) {
   if (!Array.isArray(items) || items.length > MAX_BATCH) return { ok: false, error: 'bad_request' };
   var results = items.map(function (it) {
     var eid = it && typeof it.eid === 'string' && EID_RE.test(it.eid) ? it.eid : '';
-    if (!eid || !it.payload || typeof it.payload !== 'object' || ['claimPet', 'savePet', 'logEvent'].indexOf(it.action) < 0) {
+    if (!eid || !it.payload || typeof it.payload !== 'object' || ['claimPet', 'savePet', 'logEvent', 'logPrompt'].indexOf(it.action) < 0) {
       return { eid: eid, ok: false, error: 'bad_request' };
     }
     var r = handle_(ctx, it.action, it.payload, eid);
@@ -163,6 +182,8 @@ function handle_(ctx, action, p, eid) {
   if (action === 'getPet') return getPet_(ctx, p);
   if (action === 'savePet') return savePet_(ctx, p);
   if (action === 'logEvent') return logEvent_(ctx, p, eid);
+  if (action === 'logPrompt') return logPrompt_(ctx, p);
+  if (action === 'getBrain') return getBrain_(ctx, p);
   return { ok: false, error: 'bad_request' };
 }
 
@@ -233,6 +254,39 @@ function logEvent_(ctx, p, eid) {
   if (ctx.hasEvent(eid)) return { ok: true, dup: true };
   ctx.addEvent([new Date(), p.serial, int_(p.lesson, 1, 6, 1), String(p.type), String(p.code), value, eid]);
   return { ok: true };
+}
+
+// 複製提示詞的紀錄：只收積木代碼與次數，不收提示詞文字
+function logPrompt_(ctx, p) {
+  var err = checkSerial_(ctx, p.serial);
+  if (err) return { ok: false, error: err };
+  if (!ctx.petRow(p.serial)) return { ok: false, error: 'not_claimed' };
+  if (!Array.isArray(p.blocks) || p.blocks.length > MAX_BLOCKS || typeof p.copyCount !== 'number') return { ok: false, error: 'bad_request' };
+  var blocks = cleanList_(p.blocks, function (b) {
+    return BLOCK_RE.test(b);
+  }, MAX_BLOCKS);
+  if (blocks.length !== p.blocks.length) return { ok: false, error: 'bad_request' };
+  var lesson = int_(p.lesson, 1, 6, 1);
+  var copyCount = int_(p.copyCount, 1, 99, 1);
+  if (ctx.hasPromptLog(p.serial, lesson, copyCount)) return { ok: true, dup: true };
+  ctx.addPromptLog([p.serial, lesson, JSON.stringify(blocks), copyCount, new Date()]);
+  return { ok: true };
+}
+
+// 合併夥伴：回傳夥伴的外型、技能、腦袋（沒標成錯誤的樣本）。只讀，不寫入
+function getBrain_(ctx, p) {
+  var err = checkSerial_(ctx, p.serial);
+  if (err) return { ok: false, error: err };
+  var row = ctx.petRow(p.serial);
+  if (!row) return { ok: false, error: 'not_claimed' };
+  var pet = rowToPet_(ctx.readPet(row));
+  var brain = [];
+  ctx.samplesOf(p.serial).forEach(function (r) {
+    if (brain.length >= MAX_BRAIN || r[5] === true || String(r[5]).toLowerCase() === 'true') return;
+    if (CLASS_LABELS.indexOf(String(r[2])) < 0 || !HEX128_RE.test(String(r[3])) || !HEX128_RE.test(String(r[4]))) return;
+    brain.push({ label: String(r[2]), g: String(r[3]), s: String(r[4]) });
+  });
+  return { ok: true, serial: pet.serial, appearance: appearanceOf_(pet.serial), skills: pet.skills, brain: brain };
 }
 
 // ── 欄位清理 ──

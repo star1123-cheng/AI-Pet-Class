@@ -1,6 +1,7 @@
 // 第 3 堂「AI 怎麼說話」的畫面：機率接龍、寵物亂說話、修好牠的嘴巴、口頭禪、任務單、比喻校準。
 // 規則與資料都在 talk/（純函式）；這裡只管畫面。所有文字都用 textContent。
 import { mountPet } from '../pet/render.js';
+import { h } from './dom.js';
 import { CHAINS, TEMPS, tempOf, applyTemperature, drawWord, DEFAULT_LEVEL } from '../talk/chain.js';
 import { TOPICS, firstRound, talkRound, wrongCount, judgeScore, shuffle } from '../talk/hallucination.js';
 import { SHELVES, factsOn, factById } from '../talk/bookshelf.js';
@@ -15,20 +16,6 @@ const SKILL_INFO = {
 };
 
 const pct = (x) => Math.round(x * 100) + '%';
-
-// 小工具：建立元素。文字一律走 textContent
-function h(tag, props = {}, ...kids) {
-  const el = document.createElement(tag);
-  for (const [k, v] of Object.entries(props)) {
-    if (v === undefined || v === null || v === false) continue;
-    if (k === 'class') el.className = v;
-    else if (k === 'text') el.textContent = v;
-    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
-    else el.setAttribute(k, v === true ? '' : v);
-  }
-  for (const kid of kids.flat()) if (kid) el.append(kid);
-  return el;
-}
 
 export function createLesson3({ root, store, api, getPet, onExit }) {
   const body = root.querySelector('.talk-body');

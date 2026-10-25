@@ -1,6 +1,6 @@
 // 離線快取：先試網路，失敗才用快取（開發時改了檔案也能馬上看到新版）
 // 改了 FILES 清單時，把 CACHE 的版本號加 1，舊快取會在啟用時刪掉
-const CACHE = 'aipet-v4';
+const CACHE = 'aipet-v5';
 const FILES = [
   './',
   'index.html',
@@ -9,6 +9,8 @@ const FILES = [
   'app/store.js',
   'app/api.js',
   'app/lesson3.js',
+  'app/prompt.js',
+  'app/dom.js',
   'pet/serial.js',
   'pet/appearance.js',
   'pet/render.js',
@@ -24,6 +26,9 @@ const FILES = [
   'talk/bookshelf.js',
   'talk/catchphrase.js',
   'talk/lesson3.js',
+  'blocks/blocks.js',
+  'blocks/compose.js',
+  'blocks/log.js',
 ];
 
 self.addEventListener('install', (e) => {
